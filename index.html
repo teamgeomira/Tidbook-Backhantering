@@ -5,44 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tidbook Backhantering - Team Geomira AB</title>
     
+    <!-- Firebase SDK för Auth och Database -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    
+    <!-- Övriga bibliotek -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.3/docx.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.8.6/jsrsasign-all-min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
+        
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+        
         .row-odd { background-color: #f8fafc; }
         .row-even { background-color: #ffffff; }
         .row-total { background-color: #e2e8f0; font-weight: 600; }
+        
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .loading-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.5);
             display: none; align-items: center; justify-content: center; z-index: 100;
         }
         .loading-overlay.active { display: flex; }
+        
         .spinner {
             width: 50px; height: 50px; border: 4px solid #f3f3f3;
             border-top: 4px solid #3b82f6; border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         .status-badge {
             display: inline-flex; align-items: center; gap: 0.5rem;
             padding: 0.25rem 0.75rem; border-radius: 9999px;
@@ -51,84 +66,68 @@
         .status-success { background: #dcfce7; color: #166534; }
         .status-error { background: #fee2e2; color: #991b1b; }
         .status-warning { background: #fef3c7; color: #92400e; }
-        .token-input {
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
+        
+        .password-container { position: relative; }
+        .toggle-password {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            cursor: pointer; color: #94a3b8;
+        }
+        
+        .hidden { display: none !important; }
+        .filter-section { transition: all 0.2s ease; }
+        .filter-section:hover { border-color: #94a3b8; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.75rem;
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 600; color: #1e293b; }
+        .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .protocol-warning {
+            background-color: #fee2e2; border-left: 4px solid #dc2626;
+            padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="text-slate-800 min-h-screen">
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="glass-panel rounded-2xl p-8 flex flex-col items-center gap-4">
             <div class="spinner"></div>
-            <p class="text-slate-700 font-medium" id="loadingText">Hämtar data från Firebase...</p>
+            <p class="text-slate-700 font-medium" id="loadingText">Laddar...</p>
         </div>
     </div>
 
     <!-- Login Screen -->
     <div id="loginScreen" class="fixed inset-0 gradient-bg flex items-center justify-center z-50">
-        <div class="glass-panel rounded-2xl shadow-2xl p-8 w-full max-w-lg mx-4 fade-in">
+        <div class="glass-panel rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 fade-in">
             <div class="text-center mb-6">
                 <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                     <i class="fas fa-clock text-white text-2xl"></i>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-800">Team Geomira AB</h1>
                 <p class="text-slate-500 mt-1">Tidrapport Generator</p>
-                <p class="text-xs text-slate-400 mt-2">GitHub Pages Edition</p>
             </div>
             
-            <!-- Firebase Token Section -->
-            <div class="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                <h3 class="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-2">
-                    <i class="fas fa-key"></i> Firebase Service Account
-                </h3>
-                <p class="text-xs text-amber-700 mb-3">
-                    Klistra in innehållet från firebase.vin för att ansluta till Realtime Database
+            <!-- Varning för file:// -->
+            <div id="protocolWarning" class="protocol-warning hidden">
+                <p class="text-red-800 text-sm flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Du kör från filsystemet (file://). Firebase kräver en server. Starta en lokal server (t.ex. "npx http-server") och öppna på http://localhost.</span>
                 </p>
-                
-                <div class="space-y-2">
-                    <textarea 
-                        id="tokenInput" 
-                        rows="6" 
-                        class="w-full px-3 py-2 border border-amber-300 rounded-lg token-input focus:ring-2 focus:ring-amber-500 outline-none resize-none"
-                        placeholder='{"type":"service_account","project_id":"tidbok-df555",...}'
-                    ></textarea>
-                    
-                    <div class="flex gap-2">
-                        <button onclick="app.loadToken()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium py-2 rounded-lg transition">
-                            <i class="fas fa-plug mr-1"></i> Anslut med Token
-                        </button>
-                        <label class="cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-medium py-2 px-3 rounded-lg transition flex items-center">
-                            <i class="fas fa-file-upload"></i>
-                            <input type="file" id="tokenFile" accept=".json,.vin" class="hidden" onchange="app.loadTokenFromFile(event)">
-                        </label>
-                    </div>
-                </div>
-                
-                <div id="tokenStatus" class="hidden mt-3 p-2 bg-emerald-100 rounded-lg border border-emerald-200">
-                    <p class="text-xs text-emerald-800 flex items-center gap-1">
-                        <i class="fas fa-check-circle"></i>
-                        <span id="tokenEmail"></span>
-                    </p>
-                </div>
             </div>
-
-            <!-- Local Login -->
-            <form id="loginForm" class="space-y-4 border-t border-slate-200 pt-4">
-                <h3 class="text-sm font-semibold text-slate-700 mb-2">Lokal inloggning</h3>
+            
+            <!-- Firebase Inloggning -->
+            <form id="loginForm" class="space-y-4">
                 <div>
-                    <input type="text" id="loginUser" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Användarnamn" required>
+                    <input type="email" id="loginEmail" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="E-post" required>
                 </div>
-                <div>
-                    <input type="password" id="loginPass" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Lösenord" required>
-                </div>
-                <div class="flex items-center justify-between">
-                    <label class="flex items-center">
-                        <input type="checkbox" id="rememberMe" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked>
-                        <span class="ml-2 text-sm text-slate-600">Kom ihåg mig</span>
-                    </label>
+                <div class="password-container">
+                    <input type="password" id="loginPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition pr-10" placeholder="Lösenord" required>
+                    <i class="fas fa-eye toggle-password" onclick="app.togglePassword('loginPassword', this)"></i>
                 </div>
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition duration-200 shadow-md">
                     Logga in
@@ -146,9 +145,16 @@
         <div class="glass-panel rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 fade-in">
             <h2 class="text-xl font-bold text-slate-800 mb-4">Registrera ny användare</h2>
             <form id="registerForm" class="space-y-3">
-                <input type="text" id="regUser" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Användarnamn" required>
-                <input type="password" id="regPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Lösenord (minst 4 tecken)" required minlength="4">
-                <input type="password" id="regConfirm" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Bekräfta lösenord" required>
+                <input type="text" id="regName" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Fullständigt namn" required>
+                <input type="email" id="regEmail" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="E-post" required>
+                <div class="password-container">
+                    <input type="password" id="regPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none pr-10" placeholder="Lösenord (minst 6 tecken)" required minlength="6">
+                    <i class="fas fa-eye toggle-password" onclick="app.togglePassword('regPassword', this)"></i>
+                </div>
+                <div class="password-container">
+                    <input type="password" id="regConfirmPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none pr-10" placeholder="Bekräfta lösenord" required>
+                    <i class="fas fa-eye toggle-password" onclick="app.togglePassword('regConfirmPassword', this)"></i>
+                </div>
                 <div class="flex gap-2 mt-4">
                     <button type="button" onclick="app.closeRegister()" class="flex-1 bg-slate-300 hover:bg-slate-400 text-slate-700 font-semibold py-2 rounded-lg transition">Avbryt</button>
                     <button type="submit" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 rounded-lg transition">Registrera</button>
@@ -172,15 +178,13 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="text-sm text-slate-600 flex items-center gap-2">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        <span id="currentUserDisplay"></span>
-                    </span>
-                    <div id="firebaseStatusBadge" class="status-badge status-warning">
-                        <i class="fas fa-fire"></i> <span>Väntar</span>
+                    <div id="firebaseStatus" class="status-badge status-warning hidden">
+                        <i class="fas fa-fire"></i> <span>Ansluter...</span>
                     </div>
-                    <button onclick="app.logout()" class="text-sm text-red-600 hover:text-red-700 font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
-                        <i class="fas fa-sign-out-alt mr-1"></i>Logga ut
+                    <span class="text-sm text-slate-600" id="userDisplay"></span>
+                    <button onclick="app.logout()" class="text-sm bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="hidden sm:inline">Logga ut</span>
                     </button>
                 </div>
             </div>
@@ -189,52 +193,108 @@
         <!-- Main Content -->
         <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
             
-            <!-- Data Loading Section -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            <!-- Firebase Token Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 filter-section">
                 <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <i class="fas fa-database text-blue-500"></i> Ladda data
+                    <i class="fas fa-key text-amber-500"></i> Firebase Token (Service Account)
                 </h2>
+                
+                <div class="space-y-4">
+                    <p class="text-sm text-slate-600">
+                        Ladda <code class="bg-slate-100 px-2 py-1 rounded">firebase.vin</code> (JSON-nyckel) för att ansluta till databasen.
+                        Filen sparas i din webbläsare för framtida användning.
+                    </p>
+                    
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="app.loadFirebaseVin()" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
+                            <i class="fas fa-bolt"></i>
+                            Ladda firebase.vin automatiskt
+                        </button>
+                        
+                        <label class="relative cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
+                            <i class="fas fa-folder-open"></i>
+                            Välj fil manuellt
+                            <input type="file" id="tokenFile" accept=".vin,.json" class="hidden" onchange="app.loadTokenFromFile(event)">
+                        </label>
+
+                        <button onclick="app.forgetToken()" class="bg-red-100 hover:bg-red-200 text-red-700 px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
+                            <i class="fas fa-trash-alt"></i>
+                            Glöm token
+                        </button>
+                    </div>
+                    
+                    <div id="tokenStatus" class="hidden p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <p class="text-emerald-800 flex items-center gap-2">
+                            <i class="fas fa-check-circle text-emerald-600"></i>
+                            <span id="tokenStatusText">Firebase token laddad!</span>
+                        </p>
+                    </div>
+                    
+                    <div id="tokenError" class="hidden p-4 bg-red-50 rounded-lg border border-red-200">
+                        <p class="text-red-800 flex items-center gap-2">
+                            <i class="fas fa-exclamation-triangle text-red-600"></i>
+                            <span id="tokenErrorText"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data hämtning -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 filter-section">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-database text-blue-500"></i> Ladda tidrapporter
+                </h2>
+                
                 <div class="flex flex-wrap gap-3 items-center">
-                    <button onclick="app.loadFromFirebase()" id="btnLoadFirebase" class="bg-orange-50 hover:bg-orange-100 text-orange-700 px-4 py-2 rounded-lg border border-orange-200 transition flex items-center gap-2 opacity-50 cursor-not-allowed" disabled>
+                    <button onclick="app.loadFromFirebase()" id="btnLoadFirebase" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm opacity-50 cursor-not-allowed" disabled>
                         <i class="fas fa-fire"></i>
-                        <span>Hämta från Firebase (REST API)</span>
+                        Hämta från Firebase
                     </button>
                     
-                    <label class="relative cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-lg border border-blue-200 transition flex items-center gap-2">
+                    <label class="relative cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
                         <i class="fas fa-file-import"></i>
-                        <span>Öppna JSON (Ctrl+O)</span>
+                        Öppna JSON-fil
                         <input type="file" id="jsonFileInput" accept=".json" class="hidden" onchange="app.handleFileSelect(event)">
                     </label>
                     
-                    <div id="fileStatus" class="text-sm text-slate-500 flex items-center gap-2">
+                    <div id="fileStatus" class="text-sm text-slate-500 flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg">
                         <i class="fas fa-circle text-slate-300 text-xs"></i>
                         <span>Ingen data laddad</span>
                     </div>
                 </div>
-                
-                <div id="tokenInfoMain" class="mt-3 hidden p-3 bg-amber-50 rounded-lg border border-amber-200">
-                    <p class="text-sm text-amber-800 flex items-center gap-2">
-                        <i class="fas fa-key"></i>
-                        <span>Token laddad: <span id="mainTokenEmail" class="font-mono font-medium"></span></span>
-                    </p>
-                    <p class="text-xs text-amber-600 mt-1">
-                        Använder OAuth2 token för Firebase-anslutning
-                    </p>
+            </div>
+
+            <!-- Statistik -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="stat-card">
+                    <div class="stat-label">Totalt antal poster</div>
+                    <div class="stat-value" id="statTotalPosts">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Totalt timmar</div>
+                    <div class="stat-value" id="statTotalHours">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Valda användare</div>
+                    <div class="stat-value" id="statSelectedUsers">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Projekt</div>
+                    <div class="stat-value" id="statProjects">0</div>
                 </div>
             </div>
 
             <!-- Filters Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                
-                <!-- User Selection -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                <!-- Användare -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 filter-section lg:col-span-1">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-semibold text-slate-800 flex items-center gap-2">
-                            <i class="fas fa-users text-purple-500"></i> Välj användare
+                            <i class="fas fa-users text-purple-500"></i> Användare
                         </h3>
                         <div class="flex gap-1">
-                            <button onclick="app.selectAllUsers()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition" title="Ctrl+A">Alla</button>
-                            <button onclick="app.deselectAllUsers()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition" title="Ctrl+Shift+A">Inga</button>
+                            <button onclick="app.selectAllUsers()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition">Alla</button>
+                            <button onclick="app.deselectAllUsers()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition">Inga</button>
                         </div>
                     </div>
                     <input type="text" id="userFilter" placeholder="Filtrera användare..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-purple-500 outline-none" onkeyup="app.filterUsers()">
@@ -242,60 +302,92 @@
                     </div>
                 </div>
 
-                <!-- Date Range -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <!-- Datumfilter -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 filter-section lg:col-span-1">
                     <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-calendar-alt text-emerald-500"></i> Datumintervall
+                        <i class="fas fa-calendar-alt text-emerald-500"></i> Datum
                     </h3>
                     <div class="space-y-3">
                         <div>
-                            <label class="text-xs text-slate-500 block mb-1">Från</label>
+                            <label class="text-xs text-slate-500 block mb-1">Från datum</label>
                             <input type="date" id="startDate" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                         </div>
                         <div>
-                            <label class="text-xs text-slate-500 block mb-1">Till</label>
+                            <label class="text-xs text-slate-500 block mb-1">Till datum</label>
                             <input type="date" id="endDate" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
                         </div>
-                        <button onclick="app.applyFilters()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg transition text-sm font-medium">
-                            <i class="fas fa-sync-alt mr-1"></i> Applicera filter (F5)
-                        </button>
+                        <div>
+                            <label class="text-xs text-slate-500 block mb-1">Vecka (ISO)</label>
+                            <select id="weekFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm" onchange="app.applyWeekFilter()">
+                                <option value="">Alla veckor</option>
+                                <!-- Fylls med JavaScript för att visa aktuella veckor -->
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Project Filter -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <!-- Projektfilter -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 filter-section lg:col-span-1">
                     <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-filter text-amber-500"></i> Filtrera & Inställningar
+                        <i class="fas fa-filter text-amber-500"></i> Projektfilter
                     </h3>
-                    
                     <div class="mb-4">
-                        <label class="text-xs text-slate-500 block mb-1">Projekt</label>
+                        <label class="text-xs text-slate-500 block mb-1">Välj projekt</label>
                         <select id="projectFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm" onchange="app.applyFilters()">
                             <option value="">Alla projekt</option>
                         </select>
                     </div>
-
                     <div class="mb-4">
-                        <label class="text-xs text-slate-500 block mb-1">Global sökning</label>
+                        <label class="text-xs text-slate-500 block mb-1">Projektkod</label>
+                        <input type="text" id="projectCodeFilter" placeholder="Filtrera på projektkod..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm" onkeyup="app.applyFilters()">
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-xs text-slate-500 block mb-1">Min timmar</label>
+                        <input type="number" id="minHoursFilter" placeholder="Min timmar" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm" onchange="app.applyFilters()" min="0" step="0.5">
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-xs text-slate-500 block mb-1">Max timmar</label>
+                        <input type="number" id="maxHoursFilter" placeholder="Max timmar" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm" onchange="app.applyFilters()" min="0" step="0.5">
+                    </div>
+                </div>
+
+                <!-- Sökfilter -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 filter-section lg:col-span-1">
+                    <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-search text-indigo-500"></i> Sökfilter
+                    </h3>
+                    <div class="mb-4">
+                        <label class="text-xs text-slate-500 block mb-1">Fritextsökning</label>
                         <div class="flex gap-2">
-                            <input type="text" id="globalSearch" placeholder="Sök i all data..." class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm" onkeyup="app.applyFilters()">
-                            <button onclick="app.clearSearch()" class="text-slate-400 hover:text-slate-600 px-2">
+                            <input type="text" id="globalSearch" placeholder="Sök i beskrivning..." class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" onkeyup="app.applyFilters()">
+                            <button onclick="app.clearSearch()" class="text-slate-400 hover:text-slate-600 px-2 border border-slate-300 rounded-lg">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
-
-                    <div class="flex items-center justify-between pt-2 border-t border-slate-200">
-                        <span class="text-xs text-slate-500">Radhöjd: <span id="rowHeightValue">25</span>px</span>
-                        <div class="flex gap-1">
-                            <button onclick="app.adjustRowHeight(-5)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded flex items-center justify-center transition" title="Ctrl+-">
-                                <i class="fas fa-minus text-xs"></i>
-                            </button>
-                            <button onclick="app.adjustRowHeight(5)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded flex items-center justify-center transition" title="Ctrl++">
-                                <i class="fas fa-plus text-xs"></i>
-                            </button>
+                    <div class="mb-4">
+                        <label class="text-xs text-slate-500 block mb-1">Dag</label>
+                        <select id="dayFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" onchange="app.applyFilters()">
+                            <option value="">Alla dagar</option>
+                            <option value="Måndag">Måndag</option>
+                            <option value="Tisdag">Tisdag</option>
+                            <option value="Onsdag">Onsdag</option>
+                            <option value="Torsdag">Torsdag</option>
+                            <option value="Fredag">Fredag</option>
+                            <option value="Lördag">Lördag</option>
+                            <option value="Söndag">Söndag</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-xs text-slate-500 block mb-1">Tidintervall</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="time" id="startTimeFilter" placeholder="Från tid" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" onchange="app.applyFilters()">
+                            <input type="time" id="endTimeFilter" placeholder="Till tid" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" onchange="app.applyFilters()">
                         </div>
                     </div>
+                    <button onclick="app.resetAllFilters()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg transition text-sm font-medium">
+                        <i class="fas fa-undo mr-1"></i> Återställ alla filter
+                    </button>
                 </div>
             </div>
 
@@ -303,9 +395,20 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                     <h3 class="font-semibold text-slate-800 flex items-center gap-2">
-                        <i class="fas fa-table text-indigo-500"></i> Förhandsvisning av rapport
+                        <i class="fas fa-table text-indigo-500"></i> Förhandsvisning
                     </h3>
-                    <span id="rowCount" class="text-sm text-slate-500 font-medium">Rader: 0</span>
+                    <div class="flex items-center gap-4">
+                        <span class="text-sm text-slate-500 font-medium" id="rowCount">Rader: 0</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="app.adjustRowHeight(-5)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded flex items-center justify-center transition" title="Minska radhöjd">
+                                <i class="fas fa-minus text-xs"></i>
+                            </button>
+                            <span class="text-xs text-slate-500" id="rowHeightValue">25</span>
+                            <button onclick="app.adjustRowHeight(5)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded flex items-center justify-center transition" title="Öka radhöjd">
+                                <i class="fas fa-plus text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="overflow-x-auto custom-scrollbar">
@@ -329,22 +432,24 @@
                     </table>
                 </div>
                 
-                <div id="emptyState" class="hidden py-12 text-center text-slate-400">
+                <div id="emptyState" class="py-12 text-center text-slate-400">
                     <i class="fas fa-inbox text-4xl mb-3"></i>
-                    <p>Ladda data för att visa tidrapporter</p>
-                    <p class="text-sm mt-2">Klistra in firebase.vin token först</p>
+                    <p>Ladda firebase.vin först, sedan hämta data</p>
                 </div>
             </div>
 
             <!-- Export Actions -->
             <div class="mt-6 flex flex-wrap gap-3 justify-end">
-                <button onclick="app.exportToPDF()" class="bg-red-50 hover:bg-red-100 text-red-700 px-6 py-2.5 rounded-lg border border-red-200 transition flex items-center gap-2 font-medium" title="Ctrl+P">
+                <button onclick="app.exportToPDF()" class="bg-red-50 hover:bg-red-100 text-red-700 px-6 py-2.5 rounded-lg border border-red-200 transition flex items-center gap-2 font-medium shadow-sm">
                     <i class="fas fa-file-pdf"></i> Exportera till PDF
                 </button>
-                <button onclick="app.exportToDOC()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-6 py-2.5 rounded-lg border border-blue-200 transition flex items-center gap-2 font-medium" title="Ctrl+D">
-                    <i class="fas fa-file-word"></i> Exportera till DOC
+                <button onclick="app.exportToDOC()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-6 py-2.5 rounded-lg border border-blue-200 transition flex items-center gap-2 font-medium shadow-sm">
+                    <i class="fas fa-file-word"></i> Exportera till Word
                 </button>
-                <button onclick="app.clearAll()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium" title="Ctrl+L">
+                <button onclick="app.exportToExcel()" class="bg-green-50 hover:bg-green-100 text-green-700 px-6 py-2.5 rounded-lg border border-green-200 transition flex items-center gap-2 font-medium shadow-sm">
+                    <i class="fas fa-file-excel"></i> Exportera till Excel (CSV)
+                </button>
+                <button onclick="app.clearAll()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
                     <i class="fas fa-trash-alt"></i> Rensa allt
                 </button>
             </div>
@@ -352,36 +457,28 @@
 
         <footer class="bg-white border-t border-slate-200 py-4 mt-8">
             <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
-                Tidrapport Generator v2.0 | GitHub Pages | Team Geomira AB © 2024
+                Tidrapport Generator v5.0 | Team Geomira AB | Firebase Authentication
             </div>
         </footer>
     </div>
 
-    <!-- Help Modal -->
-    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="glass-panel rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 fade-in max-h-[80vh] overflow-y-auto">
-            <h2 class="text-xl font-bold text-slate-800 mb-4">Kortkommandon</h2>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>Ctrl+O</span><span class="text-slate-600">Öppna JSON-fil</span></div>
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>Ctrl+P</span><span class="text-slate-600">Exportera till PDF</span></div>
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>Ctrl+D</span><span class="text-slate-600">Exportera till DOC</span></div>
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>Ctrl+Q</span><span class="text-slate-600">Avsluta</span></div>
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>Ctrl+A</span><span class="text-slate-600">Välj alla användare</span></div>
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>Ctrl+Shift+A</span><span class="text-slate-600">Avmarkera alla</span></div>
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>Ctrl+L</span><span class="text-slate-600">Rensa allt</span></div>
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>Ctrl++</span><span class="text-slate-600">Öka radhöjd</span></div>
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>Ctrl+-</span><span class="text-slate-600">Minska radhöjd</span></div>
-                <div class="flex justify-between py-2 border-b border-slate-100"><span>F5</span><span class="text-slate-600">Uppdatera tabell</span></div>
-                <div class="flex justify-between py-2"><span>ESC</span><span class="text-slate-600">Avsluta / Stäng</span></div>
-            </div>
-            <button onclick="document.getElementById('helpModal').classList.add('hidden')" class="mt-4 w-full bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg transition">Stäng</button>
-        </div>
-    </div>
-
-    <!-- jsrsasign for JWT signing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.8.6/jsrsasign-all-min.js"></script>
-
     <script>
+        // Firebase-konfiguration (ersätt med din egen)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAI-VxrbSC-d1WscOkpY9d8NaEUgdjneeE",
+            authDomain: "tidbok-df555.firebaseapp.com",
+            databaseURL: "https://tidbok-df555-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "tidbok-df555",
+            storageBucket: "tidbok-df555.firebasestorage.app",
+            messagingSenderId: "467331966400",
+            appId: "1:467331966400:web:abb6949a76918f2eb8d425"
+        };
+
+        // Initiera Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database(); // För framtida bruk om vi vill använda SDK
+
         const app = {
             data: null,
             users: [],
@@ -393,23 +490,59 @@
             serviceAccount: null,
             accessToken: null,
             tokenExpiry: null,
+            docxLoaded: false,
 
             init() {
+                this.checkProtocol();
+                this.populateWeekOptions();
                 this.setupEventListeners();
                 this.setDefaultDates();
-                this.loadSavedToken();
-                this.loadSavedCredentials();
+                this.checkAuthState();
+                this.checkDocxLibrary();
+                this.loadStoredToken(); // Försök ladda token från localStorage
+            },
+
+            checkProtocol() {
+                if (window.location.protocol === 'file:') {
+                    document.getElementById('protocolWarning').classList.remove('hidden');
+                }
+            },
+
+            populateWeekOptions() {
+                const select = document.getElementById('weekFilter');
+                // Rensa befintliga alternativ förutom "Alla veckor"
+                select.innerHTML = '<option value="">Alla veckor</option>';
+                for (let i = 1; i <= 53; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `Vecka ${i}`;
+                    select.appendChild(option);
+                }
+            },
+
+            checkDocxLibrary() {
+                const checkInterval = setInterval(() => {
+                    if (window.docx && window.docx.Document) {
+                        this.docxLoaded = true;
+                        clearInterval(checkInterval);
+                    }
+                }, 100);
+                setTimeout(() => {
+                    if (!this.docxLoaded) {
+                        console.warn('DOCX-biblioteket laddades inte');
+                    }
+                }, 5000);
             },
 
             setupEventListeners() {
                 document.getElementById('loginForm').addEventListener('submit', (e) => {
                     e.preventDefault();
-                    this.login();
+                    this.loginWithEmail();
                 });
 
                 document.getElementById('registerForm').addEventListener('submit', (e) => {
                     e.preventDefault();
-                    this.register();
+                    this.registerWithEmail();
                 });
 
                 document.addEventListener('keydown', (e) => {
@@ -418,6 +551,7 @@
                     if (e.ctrlKey && e.key === 'o') { e.preventDefault(); document.getElementById('jsonFileInput').click(); }
                     if (e.ctrlKey && e.key === 'p') { e.preventDefault(); this.exportToPDF(); }
                     if (e.ctrlKey && e.key === 'd') { e.preventDefault(); this.exportToDOC(); }
+                    if (e.ctrlKey && e.key === 'e') { e.preventDefault(); this.exportToExcel(); }
                     if (e.ctrlKey && e.key === 'q') { e.preventDefault(); this.logout(); }
                     if (e.ctrlKey && e.key === 'a' && !e.shiftKey) { e.preventDefault(); this.selectAllUsers(); }
                     if (e.ctrlKey && e.shiftKey && e.key === 'A') { e.preventDefault(); this.deselectAllUsers(); }
@@ -425,172 +559,114 @@
                     if (e.ctrlKey && e.key === '+') { e.preventDefault(); this.adjustRowHeight(5); }
                     if (e.ctrlKey && e.key === '-') { e.preventDefault(); this.adjustRowHeight(-5); }
                     if (e.key === 'F5') { e.preventDefault(); this.applyFilters(); }
-                    if (e.key === 'F1') { e.preventDefault(); document.getElementById('helpModal').classList.remove('hidden'); document.getElementById('helpModal').classList.add('flex'); }
-                    if (e.key === 'Escape') {
-                        document.getElementById('helpModal').classList.add('hidden');
-                        document.getElementById('helpModal').classList.remove('flex');
+                    if (e.key === 'F1') { 
+                        e.preventDefault(); 
+                        alert('Kortkommandon:\nCtrl+O: Öppna JSON\nCtrl+P: PDF\nCtrl+D: Word\nCtrl+E: Excel\nCtrl+Q: Logga ut\nCtrl+A: Alla användare\nCtrl+Shift+A: Inga användare\nCtrl+L: Rensa\nF5: Uppdatera filter');
                     }
                 });
             },
 
-            // Token handling
-            loadTokenFromFile(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById('tokenInput').value = e.target.result;
-                    this.loadToken();
-                };
-                reader.readAsText(file);
+            togglePassword(inputId, icon) {
+                const input = document.getElementById(inputId);
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
             },
 
-            loadToken() {
-                const jsonStr = document.getElementById('tokenInput').value.trim();
-                if (!jsonStr) {
-                    alert('Klistra in token JSON först');
+            checkAuthState() {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        document.getElementById('userDisplay').textContent = user.email;
+                        document.getElementById('loginScreen').classList.add('hidden');
+                        document.getElementById('mainApp').classList.remove('hidden');
+                        document.getElementById('mainApp').classList.add('flex', 'fade-in');
+                        document.getElementById('firebaseStatus').classList.remove('hidden');
+                        document.getElementById('firebaseStatus').innerHTML = '<i class="fas fa-check-circle"></i> <span>Inloggad</span>';
+                        document.getElementById('firebaseStatus').className = 'status-badge status-success';
+                    } else {
+                        this.currentUser = null;
+                        document.getElementById('loginScreen').classList.remove('hidden');
+                        document.getElementById('mainApp').classList.add('hidden');
+                    }
+                });
+            },
+
+            async loginWithEmail() {
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                if (!email || !password) {
+                    this.showLoginError('Ange e-post och lösenord', true);
                     return;
                 }
+
+                this.showLoading('Loggar in...');
 
                 try {
-                    this.serviceAccount = JSON.parse(jsonStr);
-                    
-                    if (!this.serviceAccount.client_email || !this.serviceAccount.private_key) {
-                        throw new Error('Ogiltig Service Account - saknar client_email eller private_key');
-                    }
-
-                    // Update UI
-                    document.getElementById('tokenStatus').classList.remove('hidden');
-                    document.getElementById('tokenEmail').textContent = this.serviceAccount.client_email;
-                    
-                    // Enable Firebase button
-                    const btn = document.getElementById('btnLoadFirebase');
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    
-                    // Save to localStorage
-                    localStorage.setItem('tidbookToken', jsonStr);
-                    
-                    alert('Token laddad! Du kan nu hämta data från Firebase.');
-                    
-                } catch (err) {
-                    alert('Felaktig JSON: ' + err.message);
+                    await auth.signInWithEmailAndPassword(email, password);
+                } catch (error) {
+                    this.showLoginError(this.getErrorMessage(error), true);
+                } finally {
+                    this.hideLoading();
                 }
             },
 
-            loadSavedToken() {
-                const saved = localStorage.getItem('tidbookToken');
-                if (saved) {
-                    document.getElementById('tokenInput').value = saved;
-                    this.loadToken();
-                }
-            },
-
-            // Local auth (same as original Python)
-            loadSavedCredentials() {
-                const saved = localStorage.getItem('tidbookUsers');
-                this.localUsers = saved ? JSON.parse(saved) : { admin: this.hashPassword('admin123') };
-                
-                const lastUser = localStorage.getItem('tidbookLastUser');
-                if (lastUser) {
-                    const data = JSON.parse(lastUser);
-                    document.getElementById('loginUser').value = data.username || '';
-                    if (data.remember) {
-                        // Don't auto-fill password for security, just check the box
-                        document.getElementById('rememberMe').checked = true;
-                    }
-                }
-            },
-
-            hashPassword(password) {
-                // Simple hash for local storage (not secure but matches original Python behavior)
-                let hash = 0;
-                for (let i = 0; i < password.length; i++) {
-                    const char = password.charCodeAt(i);
-                    hash = ((hash << 5) - hash) + char;
-                    hash = hash & hash;
-                }
-                return hash.toString(16);
-            },
-
-            login() {
-                const username = document.getElementById('loginUser').value.trim();
-                const password = document.getElementById('loginPass').value;
-                const remember = document.getElementById('rememberMe').checked;
-
-                if (!username || !password) {
-                    this.showLoginError('Ange användarnamn och lösenord');
-                    return;
-                }
-
-                if (this.localUsers[username] && this.localUsers[username] === this.hashPassword(password)) {
-                    this.currentUser = username;
-                    
-                    localStorage.setItem('tidbookLastUser', JSON.stringify({
-                        username: username,
-                        remember: remember
-                    }));
-                    
-                    this.showMainApp(username);
-                } else {
-                    this.showLoginError('Felaktigt användarnamn eller lösenord');
-                    document.getElementById('loginPass').value = '';
-                }
-            },
-
-            register() {
-                const username = document.getElementById('regUser').value.trim();
+            async registerWithEmail() {
+                const name = document.getElementById('regName').value;
+                const email = document.getElementById('regEmail').value;
                 const password = document.getElementById('regPassword').value;
-                const confirm = document.getElementById('regConfirm').value;
+                const confirmPassword = document.getElementById('regConfirmPassword').value;
 
-                if (!username || !password) {
-                    alert('Alla fält måste fyllas i');
-                    return;
-                }
-
-                if (password !== confirm) {
+                if (password !== confirmPassword) {
                     alert('Lösenorden matchar inte');
                     return;
                 }
 
-                if (this.localUsers[username]) {
-                    alert('Användaren finns redan');
+                if (password.length < 6) {
+                    alert('Lösenordet måste vara minst 6 tecken');
                     return;
                 }
 
-                if (password.length < 4) {
-                    alert('Lösenordet måste vara minst 4 tecken');
-                    return;
-                }
+                this.showLoading('Skapar konto...');
 
-                this.localUsers[username] = this.hashPassword(password);
-                localStorage.setItem('tidbookUsers', JSON.stringify(this.localUsers));
-                
-                alert('Användare registrerad! Du kan nu logga in.');
-                this.closeRegister();
-                document.getElementById('registerForm').reset();
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    await userCredential.user.updateProfile({ displayName: name });
+                    this.closeRegister();
+                    document.getElementById('registerForm').reset();
+                } catch (error) {
+                    alert(this.getErrorMessage(error));
+                } finally {
+                    this.hideLoading();
+                }
             },
 
-            showLoginError(msg) {
+            getErrorMessage(error) {
+                switch(error.code) {
+                    case 'auth/invalid-email': return 'Ogiltig e-postadress';
+                    case 'auth/user-disabled': return 'Detta konto är inaktiverat';
+                    case 'auth/user-not-found': return 'Ingen användare med denna e-post';
+                    case 'auth/wrong-password': return 'Fel lösenord';
+                    case 'auth/email-already-in-use': return 'E-postadressen används redan';
+                    case 'auth/weak-password': return 'Lösenordet är för svagt (minst 6 tecken)';
+                    case 'auth/network-request-failed': return 'Nätverksfel. Kontrollera din anslutning.';
+                    default: return error.message;
+                }
+            },
+
+            showLoginError(message, permanent = false) {
                 const err = document.getElementById('loginError');
-                err.textContent = msg;
+                err.textContent = message;
                 err.classList.remove('hidden');
-                setTimeout(() => err.classList.add('hidden'), 3000);
-            },
-
-            showMainApp(username) {
-                document.getElementById('currentUserDisplay').textContent = username;
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('mainApp').classList.add('flex', 'fade-in');
-                
-                // Show token info if loaded
-                if (this.serviceAccount) {
-                    document.getElementById('tokenInfoMain').classList.remove('hidden');
-                    document.getElementById('mainTokenEmail').textContent = this.serviceAccount.client_email;
-                    document.getElementById('firebaseStatusBadge').className = 'status-badge status-success';
-                    document.getElementById('firebaseStatusBadge').innerHTML = '<i class="fas fa-check-circle"></i> <span>Token klar</span>';
+                if (!permanent) {
+                    setTimeout(() => err.classList.add('hidden'), 5000);
                 }
             },
 
@@ -604,19 +680,117 @@
                 document.getElementById('registerModal').classList.remove('flex');
             },
 
-            logout() {
+            async logout() {
                 if (!confirm('Är du säker på att du vill logga ut?')) return;
-                location.reload();
+                try {
+                    await auth.signOut();
+                } catch (error) {
+                    alert('Kunde inte logga ut: ' + error.message);
+                }
             },
 
-            // Firebase OAuth2 (same as Python)
+            // Ladda token från localStorage om det finns
+            loadStoredToken() {
+                const saved = localStorage.getItem('firebaseServiceAccount');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        this.serviceAccount = parsed;
+                        this.updateTokenUI(parsed);
+                    } catch (e) {
+                        console.warn('Kunde inte läsa sparad token');
+                    }
+                }
+            },
+
+            updateTokenUI(parsed) {
+                document.getElementById('tokenStatus').classList.remove('hidden');
+                document.getElementById('tokenError').classList.add('hidden');
+                document.getElementById('btnLoadFirebase').disabled = false;
+                document.getElementById('btnLoadFirebase').classList.remove('opacity-50', 'cursor-not-allowed');
+                document.getElementById('tokenStatusText').innerHTML = `Firebase token laddad för ${parsed.client_email}`;
+            },
+
+            // Ladda firebase.vin automatiskt
+            async loadFirebaseVin() {
+                this.showLoading('Laddar firebase.vin...');
+                
+                try {
+                    const response = await fetch('firebase.vin');
+                    if (!response.ok) throw new Error('firebase.vin hittades inte');
+                    
+                    const tokenData = await response.text();
+                    this.processToken(tokenData, true); // Spara till localStorage
+                    
+                } catch (error) {
+                    this.hideLoading();
+                    this.showTokenError(error.message + '. Välj filen manuellt.');
+                }
+            },
+
+            loadTokenFromFile(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                this.showLoading('Läser fil...');
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.processToken(e.target.result, true);
+                };
+                reader.onerror = () => {
+                    this.hideLoading();
+                    this.showTokenError('Kunde inte läsa filen');
+                };
+                reader.readAsText(file);
+            },
+
+            processToken(tokenData, saveToStorage = false) {
+                try {
+                    const parsed = JSON.parse(tokenData);
+                    
+                    if (!parsed.client_email || !parsed.private_key) {
+                        throw new Error('Ogiltig service account');
+                    }
+                    
+                    this.serviceAccount = parsed;
+                    
+                    if (saveToStorage) {
+                        localStorage.setItem('firebaseServiceAccount', tokenData);
+                    }
+                    
+                    this.updateTokenUI(parsed);
+                    this.hideLoading();
+                    
+                } catch (error) {
+                    this.hideLoading();
+                    this.showTokenError('Felaktigt format: ' + error.message);
+                }
+            },
+
+            forgetToken() {
+                if (confirm('Ta bort sparad token från webbläsaren?')) {
+                    localStorage.removeItem('firebaseServiceAccount');
+                    this.serviceAccount = null;
+                    document.getElementById('tokenStatus').classList.add('hidden');
+                    document.getElementById('btnLoadFirebase').disabled = true;
+                    document.getElementById('btnLoadFirebase').classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            },
+
+            showTokenError(message) {
+                document.getElementById('tokenErrorText').textContent = message;
+                document.getElementById('tokenError').classList.remove('hidden');
+                document.getElementById('tokenStatus').classList.add('hidden');
+            },
+
             async getAccessToken() {
                 if (this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry) {
                     return this.accessToken;
                 }
 
                 if (!this.serviceAccount) {
-                    throw new Error('Ladda firebase.vin token först');
+                    throw new Error('Ladda firebase.vin först');
                 }
 
                 try {
@@ -646,9 +820,7 @@
 
                     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
                             grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
                             assertion: jwt
@@ -665,39 +837,36 @@
                     this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
                     
                     return this.accessToken;
+                    
                 } catch (error) {
                     console.error('Token error:', error);
-                    throw new Error(`Kunde inte hämta token: ${error.message}`);
+                    throw new Error('Kunde inte hämta access token: ' + error.message);
                 }
             },
 
             async loadFromFirebase() {
                 if (!this.serviceAccount) {
-                    alert('Ladda firebase.vin token först (klistra in JSON eller välj fil)');
+                    alert('Ladda firebase.vin först');
                     return;
                 }
 
-                document.getElementById('loadingOverlay').classList.add('active');
-                document.getElementById('loadingText').textContent = 'Genererar OAuth2-token...';
+                this.showLoading('Hämtar access token...');
 
                 try {
                     const token = await this.getAccessToken();
                     
-                    document.getElementById('loadingText').textContent = 'Hämtar data från Firebase...';
+                    this.showLoading('Hämtar data från Firebase...');
                     
-                    // Use CORS proxy or direct fetch
-                    const firebaseUrl = `https://tidbok-df555-default-rtdb.europe-west1.firebasedatabase.app/.json?access_token=${token}`;
+                    const firebaseUrl = `https://${this.serviceAccount.project_id}-default-rtdb.europe-west1.firebasedatabase.app/.json?access_token=${token}`;
                     
                     const response = await fetch(firebaseUrl, {
                         method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
+                        headers: { 'Accept': 'application/json' }
                     });
 
                     if (!response.ok) {
                         if (response.status === 401 || response.status === 403) {
-                            throw new Error('Åtkomst nekad. Kontrollera att Service Account har rättigheter i Firebase Database Rules (läsåtkomst krävs).');
+                            throw new Error('Åtkomst nekad. Kontrollera behörigheter.');
                         }
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -705,7 +874,7 @@
                     this.data = await response.json();
                     
                     if (!this.data) {
-                        throw new Error('Ingen data returnerades från databasen');
+                        throw new Error('Ingen data returnerades');
                     }
 
                     this.processData();
@@ -713,24 +882,26 @@
                     document.getElementById('fileStatus').innerHTML = 
                         `<span class="status-badge status-success"><i class="fas fa-check"></i> Data hämtad från Firebase</span>`;
                     
-                    document.getElementById('firebaseStatusBadge').className = 'status-badge status-success';
-                    document.getElementById('firebaseStatusBadge').innerHTML = '<i class="fas fa-check-circle"></i> <span>Ansluten</span>';
+                    this.hideLoading();
 
                 } catch (error) {
                     console.error('Firebase error:', error);
-                    
-                    // Check if it's a CORS error
-                    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                        alert('CORS-fel: Browser blockerar direktanslutning till Firebase.\n\nLösningar:\n1. Använd JSON-fil istället (ladda manuellt)\n2. Installera CORS-unblocker extension (endast för test)\n3. Använd backend-server (Node.js)\n\nFel: ' + error.message);
-                    } else {
-                        alert('Kunde inte hämta data: ' + error.message);
-                    }
+                    alert('Kunde inte hämta data: ' + error.message);
                     
                     document.getElementById('fileStatus').innerHTML = 
                         `<span class="status-badge status-error"><i class="fas fa-exclamation-triangle"></i> Fel vid hämtning</span>`;
-                } finally {
-                    document.getElementById('loadingOverlay').classList.remove('active');
+                    
+                    this.hideLoading();
                 }
+            },
+
+            showLoading(message) {
+                document.getElementById('loadingText').textContent = message || 'Laddar...';
+                document.getElementById('loadingOverlay').classList.add('active');
+            },
+
+            hideLoading() {
+                document.getElementById('loadingOverlay').classList.remove('active');
             },
 
             setDefaultDates() {
@@ -746,6 +917,8 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
+                this.showLoading('Laddar JSON-fil...');
+                
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
@@ -753,8 +926,10 @@
                         this.processData();
                         document.getElementById('fileStatus').innerHTML = 
                             `<span class="status-badge status-success"><i class="fas fa-check"></i> Fil laddad: ${file.name}</span>`;
+                        this.hideLoading();
                     } catch (err) {
-                        alert('Kunde inte ladda filen: ' + err.message);
+                        this.hideLoading();
+                        alert('Kunde inte läsa filen: ' + err.message);
                     }
                 };
                 reader.readAsText(file);
@@ -815,6 +990,72 @@
                 });
 
                 document.getElementById('emptyState').classList.add('hidden');
+                
+                this.updateStatistics();
+                this.selectAllUsers(); // Välj alla som standard
+            },
+
+            updateStatistics() {
+                if (!this.data) return;
+                
+                let totalPosts = 0;
+                let totalHours = 0;
+                
+                Object.values(this.data.users).forEach(user => {
+                    if (user.records) {
+                        totalPosts += Object.keys(user.records).length;
+                        Object.values(user.records).forEach(rec => {
+                            try {
+                                const start = new Date(`2000-01-01T${rec.startTime}`);
+                                let end = new Date(`2000-01-01T${rec.endTime}`);
+                                if (end < start) end.setDate(end.getDate() + 1);
+                                const diff = (end - start) / 1000 / 60;
+                                const breakMin = parseInt(rec.breakTime) || 0;
+                                totalHours += Math.max(0, (diff - breakMin) / 60);
+                            } catch (e) {}
+                        });
+                    }
+                });
+                
+                document.getElementById('statTotalPosts').textContent = totalPosts;
+                document.getElementById('statTotalHours').textContent = totalHours.toFixed(1);
+                document.getElementById('statSelectedUsers').textContent = this.users.length;
+                document.getElementById('statProjects').textContent = this.projects.length;
+            },
+
+            applyWeekFilter() {
+                const week = document.getElementById('weekFilter').value;
+                if (week) {
+                    // Beräkna datum för ISO-vecka (förenklad, antar att vecka 1 börjar första torsdagen? Här förenklar vi)
+                    const year = new Date().getFullYear();
+                    const firstDayOfYear = new Date(year, 0, 1);
+                    // Justera till första torsdagen för ISO-vecka (men förenklar)
+                    const days = (week - 1) * 7;
+                    const startDate = new Date(firstDayOfYear);
+                    startDate.setDate(firstDayOfYear.getDate() + days);
+                    const endDate = new Date(startDate);
+                    endDate.setDate(startDate.getDate() + 6);
+                    
+                    document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+                    document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+                }
+                this.applyFilters();
+            },
+
+            resetAllFilters() {
+                document.getElementById('userFilter').value = '';
+                document.getElementById('projectFilter').value = '';
+                document.getElementById('projectCodeFilter').value = '';
+                document.getElementById('minHoursFilter').value = '';
+                document.getElementById('maxHoursFilter').value = '';
+                document.getElementById('globalSearch').value = '';
+                document.getElementById('dayFilter').value = '';
+                document.getElementById('startTimeFilter').value = '';
+                document.getElementById('endTimeFilter').value = '';
+                document.getElementById('weekFilter').value = '';
+                this.setDefaultDates();
+                this.selectAllUsers();
+                this.applyFilters();
             },
 
             toggleUser(userId) {
@@ -872,7 +1113,13 @@
                 const startDate = document.getElementById('startDate').value;
                 const endDate = document.getElementById('endDate').value;
                 const projectFilter = document.getElementById('projectFilter').value;
+                const projectCodeFilter = document.getElementById('projectCodeFilter').value.toLowerCase();
+                const minHours = parseFloat(document.getElementById('minHoursFilter').value) || 0;
+                const maxHours = parseFloat(document.getElementById('maxHoursFilter').value) || 999;
                 const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+                const dayFilter = document.getElementById('dayFilter').value;
+                const startTimeFilter = document.getElementById('startTimeFilter').value;
+                const endTimeFilter = document.getElementById('endTimeFilter').value;
 
                 let filtered = [];
                 let totalHours = 0;
@@ -896,9 +1143,13 @@
                         const projDisplay = project.code && project.name ? `${project.name} - ${project.code}` : (project.name || project.code || 'Okänt projekt');
                         
                         if (projectFilter) {
-                            const filterProj = JSON.parse(projectFilter);
-                            if (project.code !== filterProj.code || project.name !== filterProj.name) return;
+                            try {
+                                const filterProj = JSON.parse(projectFilter);
+                                if (project.code !== filterProj.code || project.name !== filterProj.name) return;
+                            } catch (e) { return; }
                         }
+                        
+                        if (projectCodeFilter && !projDisplay.toLowerCase().includes(projectCodeFilter)) return;
 
                         let hours = 0;
                         let breakHours = 0;
@@ -912,8 +1163,16 @@
                             hours = Math.max(0, (diff - breakMin) / 60);
                         } catch (e) { hours = 0; }
 
+                        if (hours < minHours || hours > maxHours) return;
+
                         const dateObj = new Date(rec.date);
                         const dayName = dayMap[dateObj.toLocaleDateString('en-US', {weekday: 'long'})] || '';
+                        
+                        if (dayFilter && dayName !== dayFilter) return;
+                        
+                        if (startTimeFilter && rec.startTime < startTimeFilter) return;
+                        if (endTimeFilter && rec.endTime > endTimeFilter) return;
+
                         const shortDate = rec.date.substring(2);
 
                         const searchString = `${shortDate} ${dayName} ${rec.startTime} ${rec.endTime} ${projDisplay} ${rec.notes || ''} ${userName}`.toLowerCase();
@@ -990,173 +1249,199 @@
 
             exportToPDF() {
                 if (this.filteredRecords.length === 0) {
-                    alert('Ingen data att exportera');
+                    alert('Ingen data att exportera. Applicera filter först.');
                     return;
                 }
 
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('l', 'mm', 'a4');
-                
-                let companyInfo = {};
-                if (this.selectedUsers.size > 0) {
-                    const firstUser = this.data.users[Array.from(this.selectedUsers)[0]];
-                    companyInfo = firstUser?.companySettings || {};
-                }
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF('l', 'mm', 'a4');
+                    
+                    doc.setFontSize(16);
+                    doc.text('Team Geomira AB', 14, 20);
+                    doc.setFontSize(14);
+                    doc.text('Tidrapport', 14, 35);
+                    
+                    const users = Array.from(this.selectedUsers).map(id => {
+                        const u = this.data.users[id];
+                        return `${u.firstName || ''} ${u.lastName || ''}`.trim();
+                    }).join(', ');
 
-                const companyName = companyInfo.name || 'Team Geomira AB';
-                const companyAddress = companyInfo.address || 'Köpmangatan 5, plan 10';
-                const companyPostal = companyInfo.postal || '151 71 Södertälje';
-                const companyPhone = companyInfo.phone || '0790790045';
-                const companyOrgnr = companyInfo.orgnr || '559423-8965';
-
-                doc.setFontSize(16);
-                doc.text(companyName, 14, 20);
-                doc.setFontSize(10);
-                doc.text(companyAddress, 14, 28);
-                doc.text(companyPostal, 14, 33);
-                doc.text(`Tel ${companyPhone}`, 14, 38);
-                doc.text(`Organisationsnummer: ${companyOrgnr}`, 14, 43);
-
-                doc.setFontSize(14);
-                doc.text('Tidrapport', 14, 55);
-                
-                const users = Array.from(this.selectedUsers).map(id => {
-                    const u = this.data.users[id];
-                    return `${u.firstName} ${u.lastName}`;
-                }).join(', ');
-
-                doc.setFontSize(10);
-                doc.text(`Mätningsingenjör: ${users}`, 14, 62);
-                
-                const period = `${document.getElementById('startDate').value.substring(2)} - ${document.getElementById('endDate').value.substring(2)}`;
-                doc.text(`Period: ${period}`, 14, 67);
-
-                // WITHOUT Användare column
-                const headers = [['#', 'Datum', 'Dag', 'Från', 'Till', 'Rast', 'Tim', 'Projekt', 'Arbetsbeskrivning']];
-                const data = this.filteredRecords.map((rec, idx) => [
-                    rec.isTotal ? '' : idx + 1,
-                    rec.date,
-                    rec.day,
-                    rec.start,
-                    rec.end,
-                    rec.break,
-                    rec.hours,
-                    rec.project,
-                    rec.description
-                ]);
-
-                doc.autoTable({
-                    head: headers,
-                    body: data,
-                    startY: 75,
-                    styles: { fontSize: 8, cellPadding: 2 },
-                    headStyles: { fillColor: [100, 116, 139], textColor: 255 },
-                    alternateRowStyles: { fillColor: [248, 250, 252] },
-                    didParseCell: function(data) {
-                        if (data.row.raw[6] === 'Totalt:') {
-                            data.cell.styles.fillColor = [226, 232, 240];
-                            data.cell.styles.fontStyle = 'bold';
-                        }
+                    doc.setFontSize(10);
+                    doc.text(`Mätningsingenjör: ${users}`, 14, 45);
+                    
+                    const period = `${document.getElementById('startDate').value} - ${document.getElementById('endDate').value}`;
+                    doc.text(`Period: ${period}`, 14, 52);
+                    
+                    let filterText = '';
+                    const projectFilter = document.getElementById('projectFilter').value;
+                    if (projectFilter) {
+                        try {
+                            const proj = JSON.parse(projectFilter);
+                            filterText += `Projekt: ${proj.display} `;
+                        } catch (e) {}
                     }
-                });
+                    const searchTerm = document.getElementById('globalSearch').value;
+                    if (searchTerm) {
+                        filterText += `Sök: "${searchTerm}" `;
+                    }
+                    if (filterText) {
+                        doc.text(`Filter: ${filterText}`, 14, 59);
+                        var startY = 66;
+                    } else {
+                        var startY = 59;
+                    }
 
-                doc.save(`Tidrapport_${period.replace(/\s/g, '')}.pdf`);
+                    const headers = [['#', 'Datum', 'Dag', 'Start', 'Slut', 'Rast', 'Tim', 'Projekt', 'Beskrivning']];
+                    const data = this.filteredRecords.map((rec, idx) => [
+                        rec.isTotal ? '' : idx + 1,
+                        rec.date,
+                        rec.day,
+                        rec.start,
+                        rec.end,
+                        rec.break,
+                        rec.hours,
+                        rec.project,
+                        rec.description
+                    ]);
+
+                    doc.autoTable({
+                        head: headers,
+                        body: data,
+                        startY: startY,
+                        styles: { fontSize: 8, cellPadding: 2 },
+                        headStyles: { fillColor: [100, 116, 139], textColor: 255 },
+                        alternateRowStyles: { fillColor: [248, 250, 252] },
+                        didParseCell: function(data) {
+                            if (data.row.raw[6] === 'Totalt:') {
+                                data.cell.styles.fillColor = [226, 232, 240];
+                                data.cell.styles.fontStyle = 'bold';
+                            }
+                        }
+                    });
+
+                    doc.save(`Tidrapport_${period.replace(/\//g, '-')}.pdf`);
+                    
+                } catch (error) {
+                    console.error('PDF error:', error);
+                    alert('Kunde inte skapa PDF: ' + error.message);
+                }
             },
 
             exportToDOC() {
                 if (this.filteredRecords.length === 0) {
-                    alert('Ingen data att exportera');
+                    alert('Ingen data att exportera. Applicera filter först.');
                     return;
                 }
 
-                if (!window.docx || !window.docx.Document) {
-                    alert('DOCX-biblioteket laddas fortfarande. Vänta ett ögonblick och försök igen.');
+                if (!this.docxLoaded) {
+                    alert('DOCX-biblioteket laddas. Försök igen om några sekunder.');
                     return;
                 }
 
-                const { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType, BorderStyle } = window.docx;
+                try {
+                    const { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType, BorderStyle } = window.docx;
 
-                let companyInfo = {};
-                if (this.selectedUsers.size > 0) {
-                    const firstUser = this.data.users[Array.from(this.selectedUsers)[0]];
-                    companyInfo = firstUser?.companySettings || {};
+                    const users = Array.from(this.selectedUsers).map(id => {
+                        const u = this.data.users[id];
+                        return `${u.firstName || ''} ${u.lastName || ''}`.trim();
+                    }).join(', ');
+
+                    const period = `${document.getElementById('startDate').value} - ${document.getElementById('endDate').value}`;
+
+                    const tableRows = [
+                        new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '#', bold: true })] })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Datum', bold: true })] })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Dag', bold: true })] })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Start', bold: true })] })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Slut', bold: true })] })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Rast', bold: true })] })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Tim', bold: true })] })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Projekt', bold: true })] })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Beskrivning', bold: true })] })] }),
+                            ]
+                        })
+                    ];
+
+                    this.filteredRecords.forEach((rec, idx) => {
+                        tableRows.push(new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph(rec.isTotal ? '' : String(idx + 1))] }),
+                                new TableCell({ children: [new Paragraph(rec.date)] }),
+                                new TableCell({ children: [new Paragraph(rec.day)] }),
+                                new TableCell({ children: [new Paragraph(rec.start)] }),
+                                new TableCell({ children: [new Paragraph(rec.end)] }),
+                                new TableCell({ children: [new Paragraph(rec.break)] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: rec.hours, bold: rec.isTotal })] })] }),
+                                new TableCell({ children: [new Paragraph(rec.project)] }),
+                                new TableCell({ children: [new Paragraph(rec.description)] }),
+                            ]
+                        }));
+                    });
+
+                    const doc = new Document({
+                        sections: [{
+                            properties: {},
+                            children: [
+                                new Paragraph({ children: [new TextRun({ text: 'Team Geomira AB', bold: true, size: 28 })] }),
+                                new Paragraph(''),
+                                new Paragraph({ children: [new TextRun({ text: 'Tidrapport', bold: true, size: 24 })] }),
+                                new Paragraph(`Mätningsingenjör: ${users}`),
+                                new Paragraph(`Period: ${period}`),
+                                new Paragraph(''),
+                                new Table({
+                                    width: { size: 100, type: WidthType.PERCENTAGE },
+                                    rows: tableRows,
+                                    borders: {
+                                        top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                        bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                        left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                        right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                    }
+                                })
+                            ]
+                        }]
+                    });
+
+                    Packer.toBlob(doc).then(blob => {
+                        saveAs(blob, `Tidrapport_${period.replace(/\//g, '-')}.docx`);
+                    });
+                    
+                } catch (error) {
+                    console.error('DOCX error:', error);
+                    alert('Fel vid export till Word: ' + error.message);
+                }
+            },
+
+            exportToExcel() {
+                if (this.filteredRecords.length === 0) {
+                    alert('Ingen data att exportera. Applicera filter först.');
+                    return;
                 }
 
-                const users = Array.from(this.selectedUsers).map(id => {
-                    const u = this.data.users[id];
-                    return `${u.firstName} ${u.lastName}`;
-                }).join(', ');
-
-                const period = `${document.getElementById('startDate').value.substring(2)} - ${document.getElementById('endDate').value.substring(2)}`;
-
-                const tableRows = [
-                    new TableRow({
-                        children: [
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '#', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Datum', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Dag', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Från', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Till', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Rast', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Tim', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Projekt', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Arbetsbeskrivning', bold: true })] })] }),
-                        ]
-                    })
-                ];
-
-                this.filteredRecords.forEach((rec, idx) => {
-                    tableRows.push(new TableRow({
-                        children: [
-                            new TableCell({ children: [new Paragraph(rec.isTotal ? '' : String(idx + 1))] }),
-                            new TableCell({ children: [new Paragraph(rec.date)] }),
-                            new TableCell({ children: [new Paragraph(rec.day)] }),
-                            new TableCell({ children: [new Paragraph(rec.start)] }),
-                            new TableCell({ children: [new Paragraph(rec.end)] }),
-                            new TableCell({ children: [new Paragraph(rec.break)] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: rec.hours, bold: rec.isTotal })] })] }),
-                            new TableCell({ children: [new Paragraph(rec.project)] }),
-                            new TableCell({ children: [new Paragraph(rec.description)] }),
-                        ]
-                    }));
-                });
-
-                const doc = new Document({
-                    sections: [{
-                        properties: {},
-                        children: [
-                            new Paragraph({ children: [new TextRun({ text: companyInfo.name || 'Team Geomira AB', bold: true, size: 28 })] }),
-                            new Paragraph(companyInfo.address || 'Köpmangatan 5, plan 10'),
-                            new Paragraph(companyInfo.postal || '151 71 Södertälje'),
-                            new Paragraph(`Tel ${companyInfo.phone || '0790790045'}`),
-                            new Paragraph(`Organisationsnummer: ${companyInfo.orgnr || '559423-8965'}`),
-                            new Paragraph(''),
-                            new Paragraph({ children: [new TextRun({ text: 'Tidrapport', bold: true, size: 24 })] }),
-                            new Paragraph(`Mätningsingenjör: ${users}`),
-                            new Paragraph(`Period: ${period}`),
-                            new Paragraph(''),
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                rows: tableRows,
-                                borders: {
-                                    top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                    bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                    left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                    right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                }
-                            })
-                        ]
-                    }]
-                });
-
-                Packer.toBlob(doc).then(blob => {
-                    saveAs(blob, `Tidrapport_${period.replace(/\s/g, '')}.docx`);
-                }).catch(err => {
-                    console.error('DOCX error:', err);
-                    alert('Fel vid export till Word: ' + err.message);
-                });
+                try {
+                    // Skapa CSV-innehåll med korrekt formatering
+                    let csv = '"#","Datum","Dag","Start","Slut","Rast","Tim","Projekt","Beskrivning","Användare"\n';
+                    
+                    this.filteredRecords.forEach((rec, idx) => {
+                        if (!rec.isTotal) {
+                            csv += `"${idx + 1}","${rec.date}","${rec.day}","${rec.start}","${rec.end}","${rec.break}","${rec.hours}","${rec.project.replace(/"/g, '""')}","${rec.description.replace(/"/g, '""')}","${rec.user}"\n`;
+                        } else {
+                            csv += `"","","","","","${rec.break}","${rec.hours}","","",""\n`;
+                        }
+                    });
+                    
+                    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                    saveAs(blob, `Tidrapport_${new Date().toISOString().split('T')[0]}.csv`);
+                    
+                } catch (error) {
+                    console.error('Excel error:', error);
+                    alert('Fel vid export till Excel: ' + error.message);
+                }
             },
 
             clearAll() {
@@ -1166,14 +1451,26 @@
                 this.selectedUsers.clear();
                 this.filteredRecords = [];
                 this.projects = [];
+                // this.serviceAccount behålls om användaren inte vill logga ut
                 
                 document.getElementById('userList').innerHTML = '';
                 document.getElementById('projectFilter').innerHTML = '<option value="">Alla projekt</option>';
                 document.getElementById('globalSearch').value = '';
                 document.getElementById('fileStatus').innerHTML = '<i class="fas fa-circle text-slate-300 text-xs"></i> <span>Ingen data laddad</span>';
                 
+                // Återställ token-status, men behåll token om den finns
+                if (!this.serviceAccount) {
+                    document.getElementById('tokenStatus').classList.add('hidden');
+                }
+                
                 this.renderTable([]);
                 this.setDefaultDates();
+                this.resetAllFilters();
+                
+                document.getElementById('statTotalPosts').textContent = '0';
+                document.getElementById('statTotalHours').textContent = '0';
+                document.getElementById('statSelectedUsers').textContent = '0';
+                document.getElementById('statProjects').textContent = '0';
             }
         };
 
