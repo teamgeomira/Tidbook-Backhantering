@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.3/docx.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -217,6 +217,9 @@
                         <i class="fas fa-key"></i>
                         <span>Token laddad: <span id="mainTokenEmail" class="font-mono font-medium"></span></span>
                     </p>
+                    <p class="text-xs text-amber-600 mt-1">
+                        Använder OAuth2 token för Firebase-anslutning
+                    </p>
                 </div>
             </div>
 
@@ -310,14 +313,14 @@
                         <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
                             <tr>
                                 <th class="px-4 py-3 font-semibold">#</th>
-                                <th class="px-4 py-3 font-semibold">Datum (yy-mm-dd)</th>
+                                <th class="px-4 py-3 font-semibold">Datum</th>
                                 <th class="px-4 py-3 font-semibold">Dag</th>
-                                <th class="px-4 py-3 font-semibold">Från</th>
-                                <th class="px-4 py-3 font-semibold">Till</th>
-                                <th class="px-4 py-3 font-semibold">Rast (h)</th>
+                                <th class="px-4 py-3 font-semibold">Start</th>
+                                <th class="px-4 py-3 font-semibold">Slut</th>
+                                <th class="px-4 py-3 font-semibold">Rast</th>
                                 <th class="px-4 py-3 font-semibold">Tim</th>
-                                <th class="px-4 py-3 font-semibold min-w-[200px]">Projekt (namn - kod)</th>
-                                <th class="px-4 py-3 font-semibold min-w-[300px]">Arbetsbeskrivning</th>
+                                <th class="px-4 py-3 font-semibold min-w-[200px]">Projekt</th>
+                                <th class="px-4 py-3 font-semibold min-w-[300px]">Beskrivning</th>
                                 <th class="px-4 py-3 font-semibold">Användare</th>
                             </tr>
                         </thead>
@@ -379,21 +382,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.8.6/jsrsasign-all-min.js"></script>
 
     <script>
-        // Wait for docx to load
-        let docxLoaded = false;
-        
-        // Check if docx is available
-        function checkDocx() {
-            if (typeof docx !== 'undefined' && docx.Document) {
-                docxLoaded = true;
-                console.log('✅ DOCX library loaded successfully');
-            } else {
-                console.log('⏳ Waiting for DOCX library...');
-                setTimeout(checkDocx, 500);
-            }
-        }
-        checkDocx();
-
         const app = {
             data: null,
             users: [],
@@ -405,7 +393,6 @@
             serviceAccount: null,
             accessToken: null,
             tokenExpiry: null,
-            localUsers: {},
 
             init() {
                 this.setupEventListeners();
@@ -446,6 +433,7 @@
                 });
             },
 
+            // Token handling
             loadTokenFromFile(event) {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -472,13 +460,16 @@
                         throw new Error('Ogiltig Service Account - saknar client_email eller private_key');
                     }
 
+                    // Update UI
                     document.getElementById('tokenStatus').classList.remove('hidden');
                     document.getElementById('tokenEmail').textContent = this.serviceAccount.client_email;
                     
+                    // Enable Firebase button
                     const btn = document.getElementById('btnLoadFirebase');
                     btn.disabled = false;
                     btn.classList.remove('opacity-50', 'cursor-not-allowed');
                     
+                    // Save to localStorage
                     localStorage.setItem('tidbookToken', jsonStr);
                     
                     alert('Token laddad! Du kan nu hämta data från Firebase.');
@@ -496,6 +487,7 @@
                 }
             },
 
+            // Local auth (same as original Python)
             loadSavedCredentials() {
                 const saved = localStorage.getItem('tidbookUsers');
                 this.localUsers = saved ? JSON.parse(saved) : { admin: this.hashPassword('admin123') };
@@ -505,12 +497,14 @@
                     const data = JSON.parse(lastUser);
                     document.getElementById('loginUser').value = data.username || '';
                     if (data.remember) {
+                        // Don't auto-fill password for security, just check the box
                         document.getElementById('rememberMe').checked = true;
                     }
                 }
             },
 
             hashPassword(password) {
+                // Simple hash for local storage (not secure but matches original Python behavior)
                 let hash = 0;
                 for (let i = 0; i < password.length; i++) {
                     const char = password.charCodeAt(i);
@@ -591,6 +585,7 @@
                 document.getElementById('mainApp').classList.remove('hidden');
                 document.getElementById('mainApp').classList.add('flex', 'fade-in');
                 
+                // Show token info if loaded
                 if (this.serviceAccount) {
                     document.getElementById('tokenInfoMain').classList.remove('hidden');
                     document.getElementById('mainTokenEmail').textContent = this.serviceAccount.client_email;
@@ -614,6 +609,7 @@
                 location.reload();
             },
 
+            // Firebase OAuth2 (same as Python)
             async getAccessToken() {
                 if (this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry) {
                     return this.accessToken;
@@ -689,6 +685,7 @@
                     
                     document.getElementById('loadingText').textContent = 'Hämtar data från Firebase...';
                     
+                    // Use CORS proxy or direct fetch
                     const firebaseUrl = `https://tidbok-df555-default-rtdb.europe-west1.firebasedatabase.app/.json?access_token=${token}`;
                     
                     const response = await fetch(firebaseUrl, {
@@ -722,6 +719,7 @@
                 } catch (error) {
                     console.error('Firebase error:', error);
                     
+                    // Check if it's a CORS error
                     if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
                         alert('CORS-fel: Browser blockerar direktanslutning till Firebase.\n\nLösningar:\n1. Använd JSON-fil istället (ladda manuellt)\n2. Installera CORS-unblocker extension (endast för test)\n3. Använd backend-server (Node.js)\n\nFel: ' + error.message);
                     } else {
@@ -916,7 +914,7 @@
 
                         const dateObj = new Date(rec.date);
                         const dayName = dayMap[dateObj.toLocaleDateString('en-US', {weekday: 'long'})] || '';
-                        const shortDate = rec.date.substring(2); // Format: yy-mm-dd
+                        const shortDate = rec.date.substring(2);
 
                         const searchString = `${shortDate} ${dayName} ${rec.startTime} ${rec.endTime} ${projDisplay} ${rec.notes || ''} ${userName}`.toLowerCase();
                         if (searchTerm && !searchString.includes(searchTerm)) return;
@@ -926,8 +924,8 @@
                             day: dayName,
                             start: rec.startTime,
                             end: rec.endTime,
-                            break: breakHours.toFixed(1),
-                            hours: hours.toFixed(1),
+                            break: breakHours.toFixed(2),
+                            hours: hours.toFixed(2),
                             project: projDisplay,
                             description: rec.notes || '',
                             user: userName
@@ -942,7 +940,7 @@
                 if (filtered.length > 0) {
                     filtered.push({
                         date: '', day: '', start: '', end: '',
-                        break: '', hours: totalHours.toFixed(2),
+                        break: 'Totalt:', hours: totalHours.toFixed(2),
                         project: '', description: '', user: '', isTotal: true
                     });
                 }
@@ -1000,11 +998,9 @@
                 const doc = new jsPDF('l', 'mm', 'a4');
                 
                 let companyInfo = {};
-                let firstUserName = '';
                 if (this.selectedUsers.size > 0) {
                     const firstUser = this.data.users[Array.from(this.selectedUsers)[0]];
                     companyInfo = firstUser?.companySettings || {};
-                    firstUserName = `${firstUser?.firstName || ''} ${firstUser?.lastName || ''}`.trim();
                 }
 
                 const companyName = companyInfo.name || 'Team Geomira AB';
@@ -1013,281 +1009,154 @@
                 const companyPhone = companyInfo.phone || '0790790045';
                 const companyOrgnr = companyInfo.orgnr || '559423-8965';
 
-                // Header format as in the example PDF
-                doc.setFontSize(10);
-                doc.text(`Tel ${companyPhone}`, 14, 15);
-                doc.text(`Organisationsnummer:${companyOrgnr}`, 14, 20);
-                
                 doc.setFontSize(16);
-                doc.text(companyName, 14, 30);
-                
-                doc.setFontSize(14);
-                doc.text('Tidrapport', 14, 40);
-                
+                doc.text(companyName, 14, 20);
                 doc.setFontSize(10);
-                doc.text(`Mätningsingenjör:${firstUserName}`, 14, 47);
-                
-                const period = `${document.getElementById('startDate').value.substring(2)}-${document.getElementById('endDate').value.substring(2)}`;
-                doc.text(`Period:${period}`, 14, 52);
+                doc.text(companyAddress, 14, 28);
+                doc.text(companyPostal, 14, 33);
+                doc.text(`Tel ${companyPhone}`, 14, 38);
+                doc.text(`Organisationsnummer: ${companyOrgnr}`, 14, 43);
 
-                // Table headers matching the PDF format
-                const headers = [['#', 'Datum\n(yy-mm-d)', 'Dag', 'Från', 'Till', 'Rast\n(h)', 'Tim', 'Projekt (namn - kod)', 'Arbetsbeskrivning']];
+                doc.setFontSize(14);
+                doc.text('Tidrapport', 14, 55);
                 
-                const data = this.filteredRecords.map((rec, idx) => {
-                    if (rec.isTotal) {
-                        return ['', '', '', '', '', '', rec.hours, '', ''];
-                    }
-                    return [
-                        idx + 1,
-                        rec.date,
-                        rec.day,
-                        rec.start,
-                        rec.end,
-                        rec.break,
-                        rec.hours,
-                        rec.project,
-                        rec.description
-                    ];
-                });
+                const users = Array.from(this.selectedUsers).map(id => {
+                    const u = this.data.users[id];
+                    return `${u.firstName} ${u.lastName}`;
+                }).join(', ');
 
-                // Add total row
-                const totalRow = this.filteredRecords.find(r => r.isTotal);
-                if (totalRow) {
-                    data.push(['', '', '', '', '', '', `Totalt:\n${totalRow.hours}`, '', '']);
-                }
+                doc.setFontSize(10);
+                doc.text(`Mätningsingenjör: ${users}`, 14, 62);
+                
+                const period = `${document.getElementById('startDate').value.substring(2)} - ${document.getElementById('endDate').value.substring(2)}`;
+                doc.text(`Period: ${period}`, 14, 67);
+
+                // WITHOUT Användare column
+                const headers = [['#', 'Datum', 'Dag', 'Från', 'Till', 'Rast', 'Tim', 'Projekt', 'Arbetsbeskrivning']];
+                const data = this.filteredRecords.map((rec, idx) => [
+                    rec.isTotal ? '' : idx + 1,
+                    rec.date,
+                    rec.day,
+                    rec.start,
+                    rec.end,
+                    rec.break,
+                    rec.hours,
+                    rec.project,
+                    rec.description
+                ]);
 
                 doc.autoTable({
                     head: headers,
                     body: data,
-                    startY: 58,
-                    styles: { 
-                        fontSize: 9, 
-                        cellPadding: 2,
-                        valign: 'middle'
-                    },
-                    headStyles: { 
-                        fillColor: [255, 255, 255], 
-                        textColor: 0,
-                        fontStyle: 'bold',
-                        lineWidth: 0.5,
-                        lineColor: [0, 0, 0]
-                    },
-                    bodyStyles: {
-                        lineWidth: 0.5,
-                        lineColor: [0, 0, 0]
-                    },
-                    columnStyles: {
-                        0: { cellWidth: 10, halign: 'center' },
-                        1: { cellWidth: 25 },
-                        2: { cellWidth: 20 },
-                        3: { cellWidth: 15, halign: 'center' },
-                        4: { cellWidth: 15, halign: 'center' },
-                        5: { cellWidth: 15, halign: 'center' },
-                        6: { cellWidth: 15, halign: 'center' },
-                        7: { cellWidth: 50 },
-                        8: { cellWidth: 'auto' }
-                    },
-                    theme: 'grid',
+                    startY: 75,
+                    styles: { fontSize: 8, cellPadding: 2 },
+                    headStyles: { fillColor: [100, 116, 139], textColor: 255 },
+                    alternateRowStyles: { fillColor: [248, 250, 252] },
                     didParseCell: function(data) {
-                        // Bold for total row
-                        if (data.row.index === data.table.body.length - 1 && totalRow) {
+                        if (data.row.raw[6] === 'Totalt:') {
+                            data.cell.styles.fillColor = [226, 232, 240];
                             data.cell.styles.fontStyle = 'bold';
-                            data.cell.styles.fillColor = [240, 240, 240];
                         }
                     }
                 });
 
-                doc.save(`Tidrapport_${firstUserName.replace(/\s/g, '_')}_${period}.pdf`);
+                doc.save(`Tidrapport_${period.replace(/\s/g, '')}.pdf`);
             },
 
-            async exportToDOC() {
+            exportToDOC() {
                 if (this.filteredRecords.length === 0) {
                     alert('Ingen data att exportera');
                     return;
                 }
 
-                if (!docxLoaded || typeof docx === 'undefined') {
-                    alert('DOCX-biblioteket laddas fortfarande. Vänta några sekunder och försök igen.');
+                if (!window.docx || !window.docx.Document) {
+                    alert('DOCX-biblioteket laddas fortfarande. Vänta ett ögonblick och försök igen.');
                     return;
                 }
 
-                try {
-                    const { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType, BorderStyle, AlignmentType, HeadingLevel, convertInchesToTwip } = docx;
+                const { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType, BorderStyle } = window.docx;
 
-                    let companyInfo = {};
-                    let firstUserName = '';
-                    if (this.selectedUsers.size > 0) {
-                        const firstUser = this.data.users[Array.from(this.selectedUsers)[0]];
-                        companyInfo = firstUser?.companySettings || {};
-                        firstUserName = `${firstUser?.firstName || ''} ${firstUser?.lastName || ''}`.trim();
-                    }
-
-                    const companyName = companyInfo.name || 'Team Geomira AB';
-                    const companyPhone = companyInfo.phone || '0790790045';
-                    const companyOrgnr = companyInfo.orgnr || '559423-8965';
-                    const period = `${document.getElementById('startDate').value.substring(2)}-${document.getElementById('endDate').value.substring(2)}`;
-
-                    // Create table rows
-                    const tableRows = [];
-                    
-                    // Header row
-                    tableRows.push(
-                        new TableRow({
-                            children: [
-                                new TableCell({ 
-                                    children: [new Paragraph({ children: [new TextRun({ text: '#', bold: true })] })],
-                                    width: { size: 5, type: WidthType.PERCENTAGE }
-                                }),
-                                new TableCell({ 
-                                    children: [new Paragraph({ children: [new TextRun({ text: 'Datum (yy-mm-d)', bold: true })] })],
-                                    width: { size: 12, type: WidthType.PERCENTAGE }
-                                }),
-                                new TableCell({ 
-                                    children: [new Paragraph({ children: [new TextRun({ text: 'Dag', bold: true })] })],
-                                    width: { size: 10, type: WidthType.PERCENTAGE }
-                                }),
-                                new TableCell({ 
-                                    children: [new Paragraph({ children: [new TextRun({ text: 'Från', bold: true })] })],
-                                    width: { size: 8, type: WidthType.PERCENTAGE }
-                                }),
-                                new TableCell({ 
-                                    children: [new Paragraph({ children: [new TextRun({ text: 'Till', bold: true })] })],
-                                    width: { size: 8, type: WidthType.PERCENTAGE }
-                                }),
-                                new TableCell({ 
-                                    children: [new Paragraph({ children: [new TextRun({ text: 'Rast (h)', bold: true })] })],
-                                    width: { size: 10, type: WidthType.PERCENTAGE }
-                                }),
-                                new TableCell({ 
-                                    children: [new Paragraph({ children: [new TextRun({ text: 'Tim', bold: true })] })],
-                                    width: { size: 8, type: WidthType.PERCENTAGE }
-                                }),
-                                new TableCell({ 
-                                    children: [new Paragraph({ children: [new TextRun({ text: 'Projekt (namn - kod)', bold: true })] })],
-                                    width: { size: 20, type: WidthType.PERCENTAGE }
-                                }),
-                                new TableCell({ 
-                                    children: [new Paragraph({ children: [new TextRun({ text: 'Arbetsbeskrivning', bold: true })] })],
-                                    width: { size: 19, type: WidthType.PERCENTAGE }
-                                }),
-                            ]
-                        })
-                    );
-
-                    // Data rows
-                    this.filteredRecords.forEach((rec, idx) => {
-                        if (rec.isTotal) {
-                            // Total row
-                            tableRows.push(
-                                new TableRow({
-                                    children: [
-                                        new TableCell({ children: [new Paragraph('')] }),
-                                        new TableCell({ children: [new Paragraph('')] }),
-                                        new TableCell({ children: [new Paragraph('')] }),
-                                        new TableCell({ children: [new Paragraph('')] }),
-                                        new TableCell({ children: [new Paragraph('')] }),
-                                        new TableCell({ children: [new Paragraph('')] }),
-                                        new TableCell({ 
-                                            children: [new Paragraph({ 
-                                                children: [new TextRun({ text: `Totalt: ${rec.hours}`, bold: true })] 
-                                            })] 
-                                        }),
-                                        new TableCell({ children: [new Paragraph('')] }),
-                                        new TableCell({ children: [new Paragraph('')] }),
-                                    ]
-                                })
-                            );
-                        } else {
-                            tableRows.push(
-                                new TableRow({
-                                    children: [
-                                        new TableCell({ children: [new Paragraph(String(idx + 1))] }),
-                                        new TableCell({ children: [new Paragraph(rec.date)] }),
-                                        new TableCell({ children: [new Paragraph(rec.day)] }),
-                                        new TableCell({ children: [new Paragraph(rec.start)] }),
-                                        new TableCell({ children: [new Paragraph(rec.end)] }),
-                                        new TableCell({ children: [new Paragraph(rec.break)] }),
-                                        new TableCell({ children: [new Paragraph(rec.hours)] }),
-                                        new TableCell({ children: [new Paragraph(rec.project)] }),
-                                        new TableCell({ children: [new Paragraph(rec.description)] }),
-                                    ]
-                                })
-                            );
-                        }
-                    });
-
-                    const doc = new Document({
-                        sections: [{
-                            properties: {
-                                page: {
-                                    margin: {
-                                        top: convertInchesToTwip(0.5),
-                                        right: convertInchesToTwip(0.5),
-                                        bottom: convertInchesToTwip(0.5),
-                                        left: convertInchesToTwip(0.5),
-                                    },
-                                    size: {
-                                        orientation: 'landscape'
-                                    }
-                                }
-                            },
-                            children: [
-                                // Header info
-                                new Paragraph({
-                                    children: [new TextRun({ text: `Tel ${companyPhone}`, size: 20 })],
-                                    spacing: { after: 0 }
-                                }),
-                                new Paragraph({
-                                    children: [new TextRun({ text: `Organisationsnummer:${companyOrgnr}`, size: 20 })],
-                                    spacing: { after: 200 }
-                                }),
-                                
-                                // Company name (big)
-                                new Paragraph({
-                                    children: [new TextRun({ text: companyName, bold: true, size: 32 })],
-                                    spacing: { after: 200 }
-                                }),
-                                
-                                // Title
-                                new Paragraph({
-                                    children: [new TextRun({ text: 'Tidrapport', bold: true, size: 28 })],
-                                    spacing: { after: 100 }
-                                }),
-                                
-                                // Engineer and Period
-                                new Paragraph({
-                                    children: [new TextRun({ text: `Mätningsingenjör:${firstUserName}`, size: 20 })],
-                                    spacing: { after: 50 }
-                                }),
-                                new Paragraph({
-                                    children: [new TextRun({ text: `Period:${period}`, size: 20 })],
-                                    spacing: { after: 200 }
-                                }),
-                                
-                                // Table
-                                new Table({
-                                    width: { size: 100, type: WidthType.PERCENTAGE },
-                                    rows: tableRows,
-                                    borders: {
-                                        top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                        bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                        left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                        right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-                                    }
-                                })
-                            ]
-                        }]
-                    });
-
-                    const blob = await Packer.toBlob(doc);
-                    saveAs(blob, `Tidrapport_${firstUserName.replace(/\s/g, '_')}_${period}.docx`);
-                    
-                } catch (err) {
-                    console.error('DOCX Error:', err);
-                    alert('Fel vid export till Word: ' + err.message);
+                let companyInfo = {};
+                if (this.selectedUsers.size > 0) {
+                    const firstUser = this.data.users[Array.from(this.selectedUsers)[0]];
+                    companyInfo = firstUser?.companySettings || {};
                 }
+
+                const users = Array.from(this.selectedUsers).map(id => {
+                    const u = this.data.users[id];
+                    return `${u.firstName} ${u.lastName}`;
+                }).join(', ');
+
+                const period = `${document.getElementById('startDate').value.substring(2)} - ${document.getElementById('endDate').value.substring(2)}`;
+
+                const tableRows = [
+                    new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '#', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Datum', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Dag', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Från', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Till', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Rast', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Tim', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Projekt', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Arbetsbeskrivning', bold: true })] })] }),
+                        ]
+                    })
+                ];
+
+                this.filteredRecords.forEach((rec, idx) => {
+                    tableRows.push(new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph(rec.isTotal ? '' : String(idx + 1))] }),
+                            new TableCell({ children: [new Paragraph(rec.date)] }),
+                            new TableCell({ children: [new Paragraph(rec.day)] }),
+                            new TableCell({ children: [new Paragraph(rec.start)] }),
+                            new TableCell({ children: [new Paragraph(rec.end)] }),
+                            new TableCell({ children: [new Paragraph(rec.break)] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: rec.hours, bold: rec.isTotal })] })] }),
+                            new TableCell({ children: [new Paragraph(rec.project)] }),
+                            new TableCell({ children: [new Paragraph(rec.description)] }),
+                        ]
+                    }));
+                });
+
+                const doc = new Document({
+                    sections: [{
+                        properties: {},
+                        children: [
+                            new Paragraph({ children: [new TextRun({ text: companyInfo.name || 'Team Geomira AB', bold: true, size: 28 })] }),
+                            new Paragraph(companyInfo.address || 'Köpmangatan 5, plan 10'),
+                            new Paragraph(companyInfo.postal || '151 71 Södertälje'),
+                            new Paragraph(`Tel ${companyInfo.phone || '0790790045'}`),
+                            new Paragraph(`Organisationsnummer: ${companyInfo.orgnr || '559423-8965'}`),
+                            new Paragraph(''),
+                            new Paragraph({ children: [new TextRun({ text: 'Tidrapport', bold: true, size: 24 })] }),
+                            new Paragraph(`Mätningsingenjör: ${users}`),
+                            new Paragraph(`Period: ${period}`),
+                            new Paragraph(''),
+                            new Table({
+                                width: { size: 100, type: WidthType.PERCENTAGE },
+                                rows: tableRows,
+                                borders: {
+                                    top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                    bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                    left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                    right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+                                }
+                            })
+                        ]
+                    }]
+                });
+
+                Packer.toBlob(doc).then(blob => {
+                    saveAs(blob, `Tidrapport_${period.replace(/\s/g, '')}.docx`);
+                }).catch(err => {
+                    console.error('DOCX error:', err);
+                    alert('Fel vid export till Word: ' + err.message);
+                });
             },
 
             clearAll() {
