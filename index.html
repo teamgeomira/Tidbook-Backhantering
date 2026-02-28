@@ -5,426 +5,1420 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tidbook Backhantering - Team Geomira AB</title>
     
-    <!-- Firebase SDK för Auth och Database -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     
-    <!-- Övriga bibliotek -->
+    <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.3/docx.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.8.6/jsrsasign-all-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
         
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
         .row-odd { background-color: #f8fafc; }
         .row-even { background-color: #ffffff; }
-        .row-total { background-color: #e2e8f0; font-weight: 600; }
+        .row-total { 
+            background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 100%); 
+            font-weight: 700;
+            border-top: 2px solid #64748b;
+        }
         
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .custom-scrollbar::-webkit-scrollbar { 
+            width: 8px; 
+            height: 8px; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-track { 
+            background: #f1f5f9; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            border-radius: 4px; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); 
+        }
         
-        .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { 
+            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(20px) scale(0.95); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+        
+        .slide-in {
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .pulse-glow {
+            animation: pulseGlow 2s infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(102, 126, 234, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.8); }
+        }
         
         .loading-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-            display: none; align-items: center; justify-content: center; z-index: 100;
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(5px);
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1000;
         }
-        .loading-overlay.active { display: flex; }
+        
+        .loading-overlay.active { 
+            display: flex; 
+        }
         
         .spinner {
-            width: 50px; height: 50px; border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6; border-radius: 50%;
+            width: 60px; 
+            height: 60px; 
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid #667eea; 
+            border-radius: 50%;
             animation: spin 1s linear infinite;
+            position: relative;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .spinner::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top: 4px solid #764ba2;
+            animation: spin 2s linear infinite reverse;
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
         
         .status-badge {
-            display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.25rem 0.75rem; border-radius: 9999px;
-            font-size: 0.75rem; font-weight: 500;
+            display: inline-flex; 
+            align-items: center; 
+            gap: 0.5rem;
+            padding: 0.5rem 1rem; 
+            border-radius: 9999px;
+            font-size: 0.75rem; 
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
-        .status-success { background: #dcfce7; color: #166534; }
-        .status-error { background: #fee2e2; color: #991b1b; }
-        .status-warning { background: #fef3c7; color: #92400e; }
         
-        .password-container { position: relative; }
+        .status-success { 
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
+            color: #166534; 
+            border: 1px solid #86efac;
+        }
+        
+        .status-error { 
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); 
+            color: #991b1b; 
+            border: 1px solid #fca5a5;
+        }
+        
+        .status-warning { 
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
+            color: #92400e; 
+            border: 1px solid #fcd34d;
+        }
+        
+        .status-info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        
+        .password-container {
+            position: relative;
+        }
+        
         .toggle-password {
-            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-            cursor: pointer; color: #94a3b8;
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #94a3b8;
+            transition: all 0.2s;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .hidden { display: none !important; }
-        .filter-section { transition: all 0.2s ease; }
-        .filter-section:hover { border-color: #94a3b8; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .toggle-password:hover {
+            color: #667eea;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .filter-section {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+        }
+        
+        .filter-section:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px -10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
         
         .stat-card {
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.75rem;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
-        .stat-value { font-size: 1.5rem; font-weight: 600; color: #1e293b; }
-        .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
         
-        .protocol-warning {
-            background-color: #fee2e2; border-left: 4px solid #dc2626;
-            padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem;
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(102, 126, 234, 0.2);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        
+        .input-field {
+            transition: all 0.3s ease;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .input-field:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+        
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .checkbox-wrapper:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 0.375rem;
+            border: 2px solid #cbd5e1;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+        
+        .table-container {
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .export-btn {
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .export-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: inherit;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .export-btn:hover::after {
+            opacity: 0.9;
+        }
+        
+        .modal-overlay {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+        }
+        
+        .floating-action {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 50;
+        }
+        
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem 1rem;
+            background: #1e293b;
+            color: white;
+            font-size: 0.75rem;
+            border-radius: 0.5rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tooltip:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-5px);
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-purple {
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            color: #3730a3;
+        }
+        
+        .nav-item {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-item:hover::after {
+            width: 100%;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .filter-section {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            color: white;
+            font-weight: 500;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 400px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .notification.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+        
+        .advanced-filters {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        
+        .advanced-filters.open {
+            max-height: 1000px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #cbd5e1;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .tab-container {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab:hover:not(.active) {
+            color: #475569;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #94a3b8;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .sortable:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .sort-icon {
+            margin-left: 0.5rem;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+        
+        .sortable:hover .sort-icon {
+            opacity: 1;
         }
     </style>
 </head>
-<body class="text-slate-800 min-h-screen">
+<body class="text-slate-800">
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="glass-panel rounded-2xl p-8 flex flex-col items-center gap-4">
             <div class="spinner"></div>
-            <p class="text-slate-700 font-medium" id="loadingText">Laddar...</p>
+            <p class="text-slate-700 font-semibold text-lg" id="loadingText">Laddar...</p>
+            <div class="progress-bar w-48 mt-2">
+                <div class="progress-fill" id="loadingProgress" style="width: 0%"></div>
+            </div>
         </div>
     </div>
 
     <!-- Login Screen -->
-    <div id="loginScreen" class="fixed inset-0 gradient-bg flex items-center justify-center z-50">
-        <div class="glass-panel rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 fade-in">
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <i class="fas fa-clock text-white text-2xl"></i>
+    <div id="loginScreen" class="fixed inset-0 gradient-bg flex items-center justify-center z-50 p-4">
+        <div class="glass-panel rounded-3xl shadow-2xl p-8 w-full max-w-md mx-4 fade-in">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg transform rotate-3 hover:rotate-6 transition-transform duration-300">
+                    <i class="fas fa-clock text-white text-3xl"></i>
                 </div>
-                <h1 class="text-2xl font-bold text-slate-800">Team Geomira AB</h1>
-                <p class="text-slate-500 mt-1">Tidrapport Generator</p>
+                <h1 class="text-3xl font-bold text-slate-800 mb-2">Team Geomira AB</h1>
+                <p class="text-slate-500">Tidrapport Generator Pro</p>
+                <div class="mt-4 flex justify-center gap-2">
+                    <span class="badge badge-purple">v5.0</span>
+                    <span class="badge bg-slate-100 text-slate-600">Firebase Auth</span>
+                </div>
             </div>
             
-            <!-- Varning för file:// -->
-            <div id="protocolWarning" class="protocol-warning hidden">
-                <p class="text-red-800 text-sm flex items-center gap-2">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>Du kör från filsystemet (file://). Firebase kräver en server. Starta en lokal server (t.ex. "npx http-server") och öppna på http://localhost.</span>
-                </p>
-            </div>
-            
-            <!-- Firebase Inloggning -->
             <form id="loginForm" class="space-y-4">
-                <div>
-                    <input type="email" id="loginEmail" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="E-post" required>
+                <div class="space-y-1">
+                    <label class="text-sm font-medium text-slate-700 ml-1">E-postadress</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                        <input type="email" id="loginEmail" class="w-full pl-12 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition text-slate-700" placeholder="namn@geomira.se" required>
+                    </div>
                 </div>
-                <div class="password-container">
-                    <input type="password" id="loginPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition pr-10" placeholder="Lösenord" required>
-                    <i class="fas fa-eye toggle-password" onclick="app.togglePassword('loginPassword', this)"></i>
+                
+                <div class="space-y-1">
+                    <label class="text-sm font-medium text-slate-700 ml-1">Lösenord</label>
+                    <div class="password-container">
+                        <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 z-10"></i>
+                        <input type="password" id="loginPassword" class="w-full pl-12 pr-12 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition text-slate-700" placeholder="••••••••" required>
+                        <i class="fas fa-eye toggle-password" onclick="app.togglePassword('loginPassword', this)"></i>
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition duration-200 shadow-md">
-                    Logga in
+
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-600">Kom ihåg mig</span>
+                    </label>
+                    <a href="#" class="text-blue-600 hover:text-blue-700 font-medium">Glömt lösenord?</a>
+                </div>
+                
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3.5 rounded-xl transition duration-300 shadow-lg shadow-blue-500/30 transform hover:-translate-y-0.5">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Logga in
                 </button>
-                <button type="button" onclick="app.showRegister()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg transition duration-200 shadow-md">
+                
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-slate-200"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-4 bg-white text-slate-500">eller</span>
+                    </div>
+                </div>
+                
+                <button type="button" onclick="app.showRegister()" class="w-full bg-white border-2 border-slate-200 hover:border-emerald-500 hover:text-emerald-600 text-slate-700 font-semibold py-3.5 rounded-xl transition duration-300 flex items-center justify-center gap-2 group">
+                    <i class="fas fa-user-plus group-hover:scale-110 transition-transform"></i>
                     Registrera ny användare
                 </button>
             </form>
-            <p id="loginError" class="text-red-500 text-sm text-center mt-4 hidden"></p>
+            
+            <div id="loginError" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm text-center hidden flex items-center justify-center gap-2">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="loginErrorText"></span>
+            </div>
         </div>
     </div>
 
     <!-- Register Modal -->
-    <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="glass-panel rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 fade-in">
-            <h2 class="text-xl font-bold text-slate-800 mb-4">Registrera ny användare</h2>
-            <form id="registerForm" class="space-y-3">
-                <input type="text" id="regName" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Fullständigt namn" required>
-                <input type="email" id="regEmail" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="E-post" required>
+    <div id="registerModal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="glass-panel rounded-3xl shadow-2xl p-8 w-full max-w-md mx-4 fade-in relative">
+            <button onclick="app.closeRegister()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <i class="fas fa-user-plus text-white text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Skapa konto</h2>
+                <p class="text-slate-500 text-sm mt-1">Fyll i dina uppgifter nedan</p>
+            </div>
+            
+            <form id="registerForm" class="space-y-4">
+                <div class="relative">
+                    <i class="fas fa-user absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="regName" class="w-full pl-12 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition" placeholder="Fullständigt namn" required>
+                </div>
+                
+                <div class="relative">
+                    <i class="fas fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    <input type="email" id="regEmail" class="w-full pl-12 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition" placeholder="E-postadress" required>
+                </div>
+                
                 <div class="password-container">
-                    <input type="password" id="regPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none pr-10" placeholder="Lösenord (minst 6 tecken)" required minlength="6">
+                    <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 z-10"></i>
+                    <input type="password" id="regPassword" class="w-full pl-12 pr-12 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition" placeholder="Lösenord (minst 6 tecken)" required minlength="6">
                     <i class="fas fa-eye toggle-password" onclick="app.togglePassword('regPassword', this)"></i>
                 </div>
+                
                 <div class="password-container">
-                    <input type="password" id="regConfirmPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none pr-10" placeholder="Bekräfta lösenord" required>
+                    <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 z-10"></i>
+                    <input type="password" id="regConfirmPassword" class="w-full pl-12 pr-12 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition" placeholder="Bekräfta lösenord" required>
                     <i class="fas fa-eye toggle-password" onclick="app.togglePassword('regConfirmPassword', this)"></i>
                 </div>
-                <div class="flex gap-2 mt-4">
-                    <button type="button" onclick="app.closeRegister()" class="flex-1 bg-slate-300 hover:bg-slate-400 text-slate-700 font-semibold py-2 rounded-lg transition">Avbryt</button>
-                    <button type="submit" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 rounded-lg transition">Registrera</button>
+
+                <div class="flex items-start gap-2 text-sm text-slate-600">
+                    <input type="checkbox" id="regTerms" required class="mt-1 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                    <label for="regTerms">Jag godkänner <a href="#" class="text-emerald-600 hover:underline">användarvillkoren</a> och <a href="#" class="text-emerald-600 hover:underline">integritetspolicyn</a></label>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="app.closeRegister()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition">Avbryt</button>
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-emerald-500/30">
+                        Registrera
+                    </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Export Filters Modal -->
+    <div id="exportModal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+        <div class="glass-panel rounded-3xl shadow-2xl p-8 w-full max-w-2xl mx-4 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                        <i class="fas fa-filter text-purple-500"></i>
+                        Exportfilter
+                    </h2>
+                    <p class="text-slate-500 text-sm mt-1">Välj vad som ska inkluderas i exporten</p>
+                </div>
+                <button onclick="app.closeExportModal()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Export Type Info -->
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+                    <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                    <div>
+                        <p class="font-medium text-blue-900">Exportformat: <span id="exportFormatLabel" class="font-bold">PDF</span></p>
+                        <p class="text-sm text-blue-700">Konfigurera filtren nedan innan du exporterar</p>
+                    </div>
+                </div>
+
+                <!-- Column Selection -->
+                <div>
+                    <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-columns text-indigo-500"></i> Välj kolumner att inkludera
+                    </h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="index" checked>
+                            <span class="text-sm font-medium">#</span>
+                        </label>
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="date" checked>
+                            <span class="text-sm font-medium">Datum</span>
+                        </label>
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="day" checked>
+                            <span class="text-sm font-medium">Dag</span>
+                        </label>
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="start" checked>
+                            <span class="text-sm font-medium">Starttid</span>
+                        </label>
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="end" checked>
+                            <span class="text-sm font-medium">Sluttid</span>
+                        </label>
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="break" checked>
+                            <span class="text-sm font-medium">Rast</span>
+                        </label>
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="hours" checked>
+                            <span class="text-sm font-medium">Timmar</span>
+                        </label>
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="project" checked>
+                            <span class="text-sm font-medium">Projekt</span>
+                        </label>
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="description" checked>
+                            <span class="text-sm font-medium">Beskrivning</span>
+                        </label>
+                        <label class="checkbox-wrapper border rounded-lg hover:border-indigo-300">
+                            <input type="checkbox" class="export-column" value="user" checked>
+                            <span class="text-sm font-medium">Användare</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Export Options -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                            <i class="fas fa-cog text-amber-500"></i> Exportinställningar
+                        </h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
+                                <span class="text-sm font-medium">Inkludera totalsumma</span>
+                                <input type="checkbox" id="exportIncludeTotal" checked class="rounded text-amber-500 focus:ring-amber-500">
+                            </label>
+                            <label class="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
+                                <span class="text-sm font-medium">Inkludera sidhuvud</span>
+                                <input type="checkbox" id="exportIncludeHeader" checked class="rounded text-amber-500 focus:ring-amber-500">
+                            </label>
+                            <label class="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
+                                <span class="text-sm font-medium">Gruppera efter användare</span>
+                                <input type="checkbox" id="exportGroupByUser" class="rounded text-amber-500 focus:ring-amber-500">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                            <i class="fas fa-palette text-pink-500"></i> Utseende
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 uppercase">Färgschema</label>
+                                <select id="exportColorScheme" class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none">
+                                    <option value="default">Standard (Blå/Lila)</option>
+                                    <option value="dark">Mörkt</option>
+                                    <option value="green">Grönt</option>
+                                    <option value="red">Rött</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 uppercase">Teckenstorlek</label>
+                                <select id="exportFontSize" class="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none">
+                                    <option value="small">Liten</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="large">Stor</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Range for Export -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-calendar-check text-emerald-500"></i> Datumintervall för export
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs text-slate-500 block mb-1">Från datum</label>
+                            <input type="date" id="exportStartDate" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 block mb-1">Till datum</label>
+                            <input type="date" id="exportEndDate" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Lämna tomma för att använda aktuella filter
+                    </p>
+                </div>
+
+                <!-- Preview -->
+                <div>
+                    <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-eye text-cyan-500"></i> Förhandsgranskning
+                    </h3>
+                    <div class="bg-slate-100 rounded-lg p-4 text-sm text-slate-600">
+                        <p>Antal poster att exportera: <span id="exportPreviewCount" class="font-bold text-slate-800">0</span></p>
+                        <p>Totalt antal timmar: <span id="exportPreviewHours" class="font-bold text-slate-800">0</span></p>
+                        <p>Valda kolumner: <span id="exportPreviewColumns" class="font-bold text-slate-800">10</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button onclick="app.closeExportModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition">
+                    Avbryt
+                </button>
+                <button onclick="app.executeExport()" class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-purple-500/30 flex items-center justify-center gap-2">
+                    <i class="fas fa-download"></i>
+                    Exportera nu
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- Main Application -->
     <div id="mainApp" class="hidden min-h-screen flex-col">
         <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+        <header class="glass-dark text-white shadow-lg sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
                         <i class="fas fa-clock text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-slate-800">Tidrapport Generator</h1>
-                        <p class="text-xs text-slate-500">Team Geomira AB</p>
+                        <h1 class="text-xl font-bold tracking-tight">Tidrapport Generator</h1>
+                        <p class="text-xs text-slate-300">Team Geomira AB Pro</p>
                     </div>
                 </div>
+                
                 <div class="flex items-center gap-4">
                     <div id="firebaseStatus" class="status-badge status-warning hidden">
-                        <i class="fas fa-fire"></i> <span>Ansluter...</span>
+                        <i class="fas fa-circle-notch fa-spin"></i> 
+                        <span>Ansluter...</span>
                     </div>
-                    <span class="text-sm text-slate-600" id="userDisplay"></span>
-                    <button onclick="app.logout()" class="text-sm bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span class="hidden sm:inline">Logga ut</span>
+                    
+                    <div class="hidden md:flex items-center gap-3 bg-white/10 rounded-full px-4 py-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white text-sm"></i>
+                        </div>
+                        <div class="text-sm">
+                            <p class="font-medium" id="userDisplay">Användare</p>
+                            <p class="text-xs text-slate-300">Inloggad</p>
+                        </div>
+                    </div>
+
+                    <button onclick="app.logout()" class="group relative bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2 border border-red-500/30 hover:border-red-500">
+                        <i class="fas fa-sign-out-alt group-hover:rotate-180 transition-transform duration-500"></i>
+                        <span class="hidden sm:inline font-medium">Logga ut</span>
+                        <span class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            Ctrl+Q
+                        </span>
                     </button>
                 </div>
             </div>
         </header>
 
         <!-- Main Content -->
-        <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
             
+            <!-- Quick Actions Bar -->
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button onclick="app.resetAllFilters()" class="bg-white/80 hover:bg-white text-slate-700 px-4 py-2 rounded-lg transition flex items-center gap-2 text-sm font-medium shadow-sm backdrop-blur-sm">
+                    <i class="fas fa-undo"></i> Återställ filter
+                </button>
+                <button onclick="app.toggleAdvancedFilters()" class="bg-white/80 hover:bg-white text-slate-700 px-4 py-2 rounded-lg transition flex items-center gap-2 text-sm font-medium shadow-sm backdrop-blur-sm">
+                    <i class="fas fa-sliders-h"></i> Avancerade filter
+                </button>
+                <button onclick="app.saveCurrentView()" class="bg-white/80 hover:bg-white text-slate-700 px-4 py-2 rounded-lg transition flex items-center gap-2 text-sm font-medium shadow-sm backdrop-blur-sm">
+                    <i class="fas fa-bookmark"></i> Spara vy
+                </button>
+                <button onclick="app.loadSavedView()" class="bg-white/80 hover:bg-white text-slate-700 px-4 py-2 rounded-lg transition flex items-center gap-2 text-sm font-medium shadow-sm backdrop-blur-sm">
+                    <i class="fas fa-folder-open"></i> Ladda vy
+                </button>
+            </div>
+
             <!-- Firebase Token Section -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 filter-section">
-                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <i class="fas fa-key text-amber-500"></i> Firebase Token (Service Account)
-                </h2>
+            <div class="glass-panel rounded-2xl p-6 mb-6 filter-section">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-key text-amber-500"></i> 
+                        Firebase-autentisering
+                    </h2>
+                    <span class="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">Steg 1</span>
+                </div>
                 
                 <div class="space-y-4">
-                    <p class="text-sm text-slate-600">
-                        Ladda <code class="bg-slate-100 px-2 py-1 rounded">firebase.vin</code> (JSON-nyckel) för att ansluta till databasen.
-                        Filen sparas i din webbläsare för framtida användning.
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Ladda <code class="bg-amber-100 text-amber-800 px-2 py-1 rounded font-mono text-xs">firebase.vin</code> för att ansluta till databasen. 
+                        Filen innehåller service account-nycklar för säker åtkomst.
                     </p>
                     
                     <div class="flex flex-wrap gap-3">
-                        <button onclick="app.loadFirebaseVin()" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
+                        <button onclick="app.loadFirebaseVin()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-6 py-3 rounded-xl transition flex items-center gap-2 font-semibold shadow-lg shadow-amber-500/30 transform hover:-translate-y-0.5">
                             <i class="fas fa-bolt"></i>
                             Ladda firebase.vin automatiskt
                         </button>
                         
-                        <label class="relative cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
+                        <label class="relative cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-xl transition flex items-center gap-2 font-semibold border-2 border-slate-200 hover:border-slate-300">
                             <i class="fas fa-folder-open"></i>
                             Välj fil manuellt
                             <input type="file" id="tokenFile" accept=".vin,.json" class="hidden" onchange="app.loadTokenFromFile(event)">
                         </label>
-
-                        <button onclick="app.forgetToken()" class="bg-red-100 hover:bg-red-200 text-red-700 px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
-                            <i class="fas fa-trash-alt"></i>
-                            Glöm token
+                        
+                        <button onclick="app.showTokenHelp()" class="text-slate-400 hover:text-slate-600 px-3 py-3 transition">
+                            <i class="fas fa-question-circle text-xl"></i>
                         </button>
                     </div>
                     
-                    <div id="tokenStatus" class="hidden p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                        <p class="text-emerald-800 flex items-center gap-2">
-                            <i class="fas fa-check-circle text-emerald-600"></i>
-                            <span id="tokenStatusText">Firebase token laddad!</span>
-                        </p>
+                    <div id="tokenStatus" class="hidden p-4 bg-emerald-50 rounded-xl border border-emerald-200 flex items-start gap-3">
+                        <i class="fas fa-check-circle text-emerald-600 text-xl mt-0.5"></i>
+                        <div>
+                            <p class="text-emerald-800 font-medium">Firebase token laddad!</p>
+                            <p class="text-emerald-600 text-sm" id="tokenStatusText"></p>
+                        </div>
                     </div>
                     
-                    <div id="tokenError" class="hidden p-4 bg-red-50 rounded-lg border border-red-200">
-                        <p class="text-red-800 flex items-center gap-2">
-                            <i class="fas fa-exclamation-triangle text-red-600"></i>
-                            <span id="tokenErrorText"></span>
-                        </p>
+                    <div id="tokenError" class="hidden p-4 bg-red-50 rounded-xl border border-red-200 flex items-start gap-3">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-xl mt-0.5"></i>
+                        <div>
+                            <p class="text-red-800 font-medium">Fel vid laddning</p>
+                            <p class="text-red-600 text-sm" id="tokenErrorText"></p>
+                            <button onclick="app.showManualTokenInput()" class="mt-2 text-sm text-red-700 underline hover:no-underline">
+                                Klistra in token manuellt istället
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Manual Token Input (Hidden by default) -->
+                    <div id="manualTokenInput" class="hidden space-y-3">
+                        <textarea id="manualTokenTextarea" rows="4" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none font-mono text-sm" placeholder="Klistra in innehållet från firebase.vin här..."></textarea>
+                        <button onclick="app.processManualToken()" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg transition font-medium">
+                            Verifiera token
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Data hämtning -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 filter-section">
-                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <i class="fas fa-database text-blue-500"></i> Ladda tidrapporter
-                </h2>
+            <!-- Data Loading Section -->
+            <div class="glass-panel rounded-2xl p-6 mb-6 filter-section">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-database text-blue-500"></i> 
+                        Ladda tidrapporter
+                    </h2>
+                    <span class="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">Steg 2</span>
+                </div>
                 
                 <div class="flex flex-wrap gap-3 items-center">
-                    <button onclick="app.loadFromFirebase()" id="btnLoadFirebase" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm opacity-50 cursor-not-allowed" disabled>
+                    <button onclick="app.loadFromFirebase()" id="btnLoadFirebase" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-3 rounded-xl transition flex items-center gap-2 font-semibold shadow-lg shadow-orange-500/30 opacity-50 cursor-not-allowed transform hover:-translate-y-0.5" disabled>
                         <i class="fas fa-fire"></i>
                         Hämta från Firebase
                     </button>
                     
-                    <label class="relative cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
+                    <label class="relative cursor-pointer bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-6 py-3 rounded-xl transition flex items-center gap-2 font-semibold shadow-lg shadow-blue-500/30 transform hover:-translate-y-0.5">
                         <i class="fas fa-file-import"></i>
                         Öppna JSON-fil
                         <input type="file" id="jsonFileInput" accept=".json" class="hidden" onchange="app.handleFileSelect(event)">
                     </label>
                     
-                    <div id="fileStatus" class="text-sm text-slate-500 flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg">
+                    <div id="fileStatus" class="text-sm text-slate-500 flex items-center gap-2 bg-slate-100 px-4 py-3 rounded-xl border border-slate-200">
                         <i class="fas fa-circle text-slate-300 text-xs"></i>
                         <span>Ingen data laddad</span>
                     </div>
                 </div>
+
+                <!-- Data Summary -->
+                <div id="dataSummary" class="hidden mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                        <p class="text-xs text-blue-600 uppercase font-semibold">Användare</p>
+                        <p class="text-2xl font-bold text-blue-900" id="summaryUsers">0</p>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                        <p class="text-xs text-purple-600 uppercase font-semibold">Projekt</p>
+                        <p class="text-2xl font-bold text-purple-900" id="summaryProjects">0</p>
+                    </div>
+                    <div class="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+                        <p class="text-xs text-emerald-600 uppercase font-semibold">Poster</p>
+                        <p class="text-2xl font-bold text-emerald-900" id="summaryRecords">0</p>
+                    </div>
+                    <div class="bg-amber-50 rounded-lg p-3 border border-amber-100">
+                        <p class="text-xs text-amber-600 uppercase font-semibold">Total tid</p>
+                        <p class="text-2xl font-bold text-amber-900" id="summaryHours">0h</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Statistik -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <div class="stat-card">
-                    <div class="stat-label">Totalt antal poster</div>
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-list-ol text-2xl text-blue-500"></i>
+                        <span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded-full">Total</span>
+                    </div>
                     <div class="stat-value" id="statTotalPosts">0</div>
+                    <div class="stat-label">Totalt antal poster</div>
                 </div>
+                
                 <div class="stat-card">
-                    <div class="stat-label">Totalt timmar</div>
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-clock text-2xl text-emerald-500"></i>
+                        <span class="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">Timmar</span>
+                    </div>
                     <div class="stat-value" id="statTotalHours">0</div>
+                    <div class="stat-label">Totalt timmar</div>
                 </div>
+                
                 <div class="stat-card">
-                    <div class="stat-label">Valda användare</div>
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-users text-2xl text-purple-500"></i>
+                        <span class="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-1 rounded-full">Aktiva</span>
+                    </div>
                     <div class="stat-value" id="statSelectedUsers">0</div>
+                    <div class="stat-label">Valda användare</div>
                 </div>
+                
                 <div class="stat-card">
-                    <div class="stat-label">Projekt</div>
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fas fa-project-diagram text-2xl text-amber-500"></i>
+                        <span class="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded-full">Projekt</span>
+                    </div>
                     <div class="stat-value" id="statProjects">0</div>
+                    <div class="stat-label">Unika projekt</div>
                 </div>
             </div>
 
-            <!-- Filters Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-                <!-- Användare -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 filter-section lg:col-span-1">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-semibold text-slate-800 flex items-center gap-2">
-                            <i class="fas fa-users text-purple-500"></i> Användare
+            <!-- Filters Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+                
+                <!-- Users Filter -->
+                <div class="glass-panel rounded-2xl p-6 filter-section lg:col-span-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fas fa-users text-purple-500"></i> 
+                            Användare
                         </h3>
                         <div class="flex gap-1">
-                            <button onclick="app.selectAllUsers()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition">Alla</button>
-                            <button onclick="app.deselectAllUsers()" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition">Inga</button>
+                            <button onclick="app.selectAllUsers()" class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 px-2 py-1 rounded-lg transition font-medium" title="Ctrl+A">
+                                Alla
+                            </button>
+                            <button onclick="app.deselectAllUsers()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded-lg transition font-medium" title="Ctrl+Shift+A">
+                                Inga
+                            </button>
                         </div>
                     </div>
-                    <input type="text" id="userFilter" placeholder="Filtrera användare..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-purple-500 outline-none" onkeyup="app.filterUsers()">
-                    <div id="userList" class="h-48 overflow-y-auto border border-slate-200 rounded-lg custom-scrollbar bg-slate-50">
+                    
+                    <div class="relative mb-3">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="userFilter" placeholder="Sök användare..." class="w-full pl-10 pr-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition" onkeyup="app.filterUsers()">
+                    </div>
+                    
+                    <div class="flex items-center justify-between mb-2 px-1">
+                        <span class="text-xs text-slate-500" id="userCount">0 valda</span>
+                        <button onclick="app.invertUserSelection()" class="text-xs text-purple-600 hover:text-purple-700 font-medium">
+                            Invertera
+                        </button>
+                    </div>
+                    
+                    <div id="userList" class="h-56 overflow-y-auto border-2 border-slate-200 rounded-xl custom-scrollbar bg-slate-50/50 p-2 space-y-1">
+                        <!-- Users populated dynamically -->
+                    </div>
+                    
+                    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Klicka för att välja/avvälja</span>
                     </div>
                 </div>
 
-                <!-- Datumfilter -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 filter-section lg:col-span-1">
-                    <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-calendar-alt text-emerald-500"></i> Datum
+                <!-- Date & Time Filters -->
+                <div class="glass-panel rounded-2xl p-6 filter-section lg:col-span-3">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-emerald-500"></i> 
+                        Datum & Tid
                     </h3>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="text-xs text-slate-500 block mb-1">Från datum</label>
-                            <input type="date" id="startDate" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                    
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Från datum</label>
+                                <input type="date" id="startDate" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Till datum</label>
+                                <input type="date" id="endDate" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition">
+                            </div>
                         </div>
+
                         <div>
-                            <label class="text-xs text-slate-500 block mb-1">Till datum</label>
-                            <input type="date" id="endDate" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Snabbval vecka</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <button onclick="app.setWeek(-1)" class="text-xs bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 py-2 rounded-lg transition font-medium">Förra</button>
+                                <button onclick="app.setWeek(0)" class="text-xs bg-emerald-100 text-emerald-700 py-2 rounded-lg transition font-medium">Denna</button>
+                                <button onclick="app.setWeek(1)" class="text-xs bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 py-2 rounded-lg transition font-medium">Nästa</button>
+                                <select id="weekFilter" class="text-xs border-2 border-slate-200 rounded-lg focus:border-emerald-500 outline-none" onchange="app.applyWeekFilter()">
+                                    <option value="">Välj...</option>
+                                    ${Array.from({length: 53}, (_, i) => `<option value="${i+1}">V${i+1}</option>`).join('')}
+                                </select>
+                            </div>
                         </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Starttid från</label>
+                                <input type="time" id="startTimeFrom" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:border-emerald-500 outline-none text-sm" onchange="app.applyFilters()">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Starttid till</label>
+                                <input type="time" id="startTimeTo" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:border-emerald-500 outline-none text-sm" onchange="app.applyFilters()">
+                            </div>
+                        </div>
+
                         <div>
-                            <label class="text-xs text-slate-500 block mb-1">Vecka (ISO)</label>
-                            <select id="weekFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm" onchange="app.applyWeekFilter()">
-                                <option value="">Alla veckor</option>
-                                <!-- Fylls med JavaScript för att visa aktuella veckor -->
+                            <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Specifik dag</label>
+                            <select id="dayFilter" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition" onchange="app.applyFilters()">
+                                <option value="">Alla dagar</option>
+                                <option value="Måndag">Måndag</option>
+                                <option value="Tisdag">Tisdag</option>
+                                <option value="Onsdag">Onsdag</option>
+                                <option value="Torsdag">Torsdag</option>
+                                <option value="Fredag">Fredag</option>
+                                <option value="Lördag">Lördag</option>
+                                <option value="Söndag">Söndag</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Projektfilter -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 filter-section lg:col-span-1">
-                    <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-filter text-amber-500"></i> Projektfilter
+                <!-- Project & Hours Filters -->
+                <div class="glass-panel rounded-2xl p-6 filter-section lg:col-span-3">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-filter text-amber-500"></i> 
+                        Projekt & Timmar
                     </h3>
-                    <div class="mb-4">
-                        <label class="text-xs text-slate-500 block mb-1">Välj projekt</label>
-                        <select id="projectFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm" onchange="app.applyFilters()">
-                            <option value="">Alla projekt</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="text-xs text-slate-500 block mb-1">Projektkod</label>
-                        <input type="text" id="projectCodeFilter" placeholder="Filtrera på projektkod..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm" onkeyup="app.applyFilters()">
-                    </div>
-                    <div class="mb-4">
-                        <label class="text-xs text-slate-500 block mb-1">Min timmar</label>
-                        <input type="number" id="minHoursFilter" placeholder="Min timmar" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm" onchange="app.applyFilters()" min="0" step="0.5">
-                    </div>
-                    <div class="mb-4">
-                        <label class="text-xs text-slate-500 block mb-1">Max timmar</label>
-                        <input type="number" id="maxHoursFilter" placeholder="Max timmar" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm" onchange="app.applyFilters()" min="0" step="0.5">
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Projekt</label>
+                            <select id="projectFilter" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm transition" onchange="app.applyFilters()">
+                                <option value="">Alla projekt</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Projektkod innehåller</label>
+                            <div class="relative">
+                                <i class="fas fa-hashtag absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input type="text" id="projectCodeFilter" placeholder="t.ex. GEO-2024" class="w-full pl-10 pr-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm transition" onkeyup="app.applyFilters()">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Min timmar</label>
+                                <input type="number" id="minHoursFilter" placeholder="0" min="0" step="0.5" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm transition" onchange="app.applyFilters()">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Max timmar</label>
+                                <input type="number" id="maxHoursFilter" placeholder="∞" min="0" step="0.5" class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm transition" onchange="app.applyFilters()">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="flex items-center gap-3 cursor-pointer p-3 border-2 border-slate-200 rounded-xl hover:border-amber-300 hover:bg-amber-50/50 transition">
+                                <input type="checkbox" id="excludeBreaks" class="rounded text-amber-500 focus:ring-amber-500 w-5 h-5" onchange="app.applyFilters()">
+                                <div>
+                                    <span class="text-sm font-medium text-slate-700 block">Exkludera raster</span>
+                                    <span class="text-xs text-slate-500">Räkna endast arbetad tid</span>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Sökfilter -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 filter-section lg:col-span-1">
-                    <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-search text-indigo-500"></i> Sökfilter
+                <!-- Search & Advanced -->
+                <div class="glass-panel rounded-2xl p-6 filter-section lg:col-span-3">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-search text-indigo-500"></i> 
+                        Sök & Filter
                     </h3>
-                    <div class="mb-4">
-                        <label class="text-xs text-slate-500 block mb-1">Fritextsökning</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="globalSearch" placeholder="Sök i beskrivning..." class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" onkeyup="app.applyFilters()">
-                            <button onclick="app.clearSearch()" class="text-slate-400 hover:text-slate-600 px-2 border border-slate-300 rounded-lg">
-                                <i class="fas fa-times"></i>
-                            </button>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Fritextsökning</label>
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" id="globalSearch" placeholder="Sök i beskrivning, projekt..." class="w-full pl-10 pr-12 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition" onkeyup="app.applyFilters()">
+                                <button onclick="app.clearSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">Söker i datum, projekt, beskrivning och användare</p>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Beskrivning innehåller</label>
+                            <input type="text" id="descriptionFilter" placeholder="Nyckelord i beskrivning..." class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition" onkeyup="app.applyFilters()">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Sluttid från</label>
+                                <input type="time" id="endTimeFrom" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:border-indigo-500 outline-none text-sm" onchange="app.applyFilters()">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-500 uppercase mb-1 block">Sluttid till</label>
+                                <input type="time" id="endTimeTo" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:border-indigo-500 outline-none text-sm" onchange="app.applyFilters()">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="flex items-center gap-3 cursor-pointer p-3 border-2 border-slate-200 rounded-xl hover:border-indigo-300 hover:bg-indigo-50/50 transition">
+                                <input type="checkbox" id="showWeekends" class="rounded text-indigo-500 focus:ring-indigo-500 w-5 h-5" onchange="app.applyFilters()">
+                                <div>
+                                    <span class="text-sm font-medium text-slate-700 block">Inkludera helger</span>
+                                    <span class="text-xs text-slate-500">Visa lördag och söndag</span>
+                                </div>
+                            </label>
                         </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="text-xs text-slate-500 block mb-1">Dag</label>
-                        <select id="dayFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" onchange="app.applyFilters()">
-                            <option value="">Alla dagar</option>
-                            <option value="Måndag">Måndag</option>
-                            <option value="Tisdag">Tisdag</option>
-                            <option value="Onsdag">Onsdag</option>
-                            <option value="Torsdag">Torsdag</option>
-                            <option value="Fredag">Fredag</option>
-                            <option value="Lördag">Lördag</option>
-                            <option value="Söndag">Söndag</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="text-xs text-slate-500 block mb-1">Tidintervall</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="time" id="startTimeFilter" placeholder="Från tid" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" onchange="app.applyFilters()">
-                            <input type="time" id="endTimeFilter" placeholder="Till tid" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" onchange="app.applyFilters()">
-                        </div>
-                    </div>
-                    <button onclick="app.resetAllFilters()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg transition text-sm font-medium">
-                        <i class="fas fa-undo mr-1"></i> Återställ alla filter
-                    </button>
                 </div>
             </div>
 
-            <!-- Table Section -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-                    <h3 class="font-semibold text-slate-800 flex items-center gap-2">
-                        <i class="fas fa-table text-indigo-500"></i> Förhandsvisning
+            <!-- Advanced Filters Panel -->
+            <div id="advancedFilters" class="advanced-filters mb-6">
+                <div class="glass-panel rounded-2xl p-6 border-2 border-purple-200">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-magic text-purple-500"></i> 
+                        Avancerade filter
                     </h3>
-                    <div class="flex items-center gap-4">
-                        <span class="text-sm text-slate-500 font-medium" id="rowCount">Rader: 0</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="app.adjustRowHeight(-5)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded flex items-center justify-center transition" title="Minska radhöjd">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Sort Options -->
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 uppercase mb-2 block">Sortering</label>
+                            <select id="sortBy" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 outline-none text-sm mb-2" onchange="app.applyFilters()">
+                                <option value="date">Datum</option>
+                                <option value="hours">Timmar</option>
+                                <option value="user">Användare</option>
+                                <option value="project">Projekt</option>
+                            </select>
+                            <div class="flex gap-2">
+                                <button onclick="app.setSortDirection('asc')" id="sortAsc" class="flex-1 py-2 text-xs rounded-lg bg-purple-100 text-purple-700 font-medium transition">
+                                    <i class="fas fa-sort-amount-up mr-1"></i> Stigande
+                                </button>
+                                <button onclick="app.setSortDirection('desc')" id="sortDesc" class="flex-1 py-2 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition">
+                                    <i class="fas fa-sort-amount-down mr-1"></i> Fallande
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Group By -->
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 uppercase mb-2 block">Gruppera efter</label>
+                            <select id="groupBy" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 outline-none text-sm" onchange="app.applyFilters()">
+                                <option value="none">Ingen gruppering</option>
+                                <option value="user">Användare</option>
+                                <option value="project">Projekt</option>
+                                <option value="week">Vecka</option>
+                                <option value="month">Månad</option>
+                            </select>
+                        </div>
+
+                        <!-- Limit Results -->
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500 uppercase mb-2 block">Max antal resultat</label>
+                            <input type="number" id="limitResults" placeholder="Alla" min="1" class="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:border-purple-500 outline-none text-sm" onchange="app.applyFilters()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Filters Display -->
+            <div id="activeFilters" class="hidden mb-4 flex flex-wrap gap-2">
+                <span class="text-sm text-slate-600 font-medium">Aktiva filter:</span>
+                <div id="activeFiltersList" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Table Section -->
+            <div class="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-slate-50 to-white">
+                    <div class="flex items-center gap-3">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                            <i class="fas fa-table text-indigo-500"></i> 
+                            Förhandsvisning
+                        </h3>
+                        <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full" id="rowCount">0 rader</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 bg-slate-100 rounded-lg p-1">
+                            <button onclick="app.adjustRowHeight(-5)" class="w-8 h-8 bg-white hover:bg-slate-50 rounded shadow-sm flex items-center justify-center transition text-slate-600" title="Minska radhöjd (Ctrl+-)">
                                 <i class="fas fa-minus text-xs"></i>
                             </button>
-                            <span class="text-xs text-slate-500" id="rowHeightValue">25</span>
-                            <button onclick="app.adjustRowHeight(5)" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded flex items-center justify-center transition" title="Öka radhöjd">
+                            <span class="text-xs font-medium text-slate-600 w-8 text-center" id="rowHeightValue">25px</span>
+                            <button onclick="app.adjustRowHeight(5)" class="w-8 h-8 bg-white hover:bg-slate-50 rounded shadow-sm flex items-center justify-center transition text-slate-600" title="Öka radhöjd (Ctrl++)">
                                 <i class="fas fa-plus text-xs"></i>
                             </button>
                         </div>
+                        
+                        <button onclick="app.toggleColumnVisibility()" class="p-2 text-slate-400 hover:text-slate-600 transition" title="Välj kolumner">
+                            <i class="fas fa-columns"></i>
+                        </button>
+                        
+                        <button onclick="app.refreshData()" class="p-2 text-slate-400 hover:text-blue-600 transition" title="Uppdatera data (F5)">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
                     </div>
                 </div>
                 
                 <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-sm text-left">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                    <table class="w-full text-sm text-left" id="mainTable">
+                        <thead class="text-xs text-slate-600 uppercase bg-slate-100/80 sticky top-0 backdrop-blur-sm">
                             <tr>
-                                <th class="px-4 py-3 font-semibold">#</th>
-                                <th class="px-4 py-3 font-semibold">Datum</th>
-                                <th class="px-4 py-3 font-semibold">Dag</th>
-                                <th class="px-4 py-3 font-semibold">Start</th>
-                                <th class="px-4 py-3 font-semibold">Slut</th>
-                                <th class="px-4 py-3 font-semibold">Rast</th>
-                                <th class="px-4 py-3 font-semibold">Tim</th>
-                                <th class="px-4 py-3 font-semibold min-w-[200px]">Projekt</th>
-                                <th class="px-4 py-3 font-semibold min-w-[300px]">Beskrivning</th>
-                                <th class="px-4 py-3 font-semibold">Användare</th>
+                                <th class="px-4 py-3 font-bold sortable" onclick="app.sortTable('index')">
+                                    # <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="px-4 py-3 font-bold sortable" onclick="app.sortTable('date')">
+                                    Datum <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="px-4 py-3 font-bold sortable" onclick="app.sortTable('day')">
+                                    Dag <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="px-4 py-3 font-bold sortable text-center" onclick="app.sortTable('start')">
+                                    Start <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="px-4 py-3 font-bold sortable text-center" onclick="app.sortTable('end')">
+                                    Slut <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="px-4 py-3 font-bold sortable text-center" onclick="app.sortTable('break')">
+                                    Rast <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="px-4 py-3 font-bold sortable text-center" onclick="app.sortTable('hours')">
+                                    Tim <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="px-4 py-3 font-bold sortable" onclick="app.sortTable('project')">
+                                    Projekt <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="px-4 py-3 font-bold sortable" onclick="app.sortTable('description')">
+                                    Beskrivning <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="px-4 py-3 font-bold sortable" onclick="app.sortTable('user')">
+                                    Användare <i class="fas fa-sort sort-icon"></i>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="dataTable" class="divide-y divide-slate-200">
@@ -432,38 +1426,109 @@
                     </table>
                 </div>
                 
-                <div id="emptyState" class="py-12 text-center text-slate-400">
-                    <i class="fas fa-inbox text-4xl mb-3"></i>
-                    <p>Ladda firebase.vin först, sedan hämta data</p>
+                <div id="emptyState" class="empty-state">
+                    <i class="fas fa-inbox text-slate-300"></i>
+                    <p class="text-lg font-medium text-slate-400 mb-2">Ingen data att visa</p>
+                    <p class="text-sm text-slate-400">Ladda firebase.vin och hämta data för att börja</p>
+                </div>
+
+                <!-- Pagination -->
+                <div id="pagination" class="hidden px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <div class="text-sm text-slate-600">
+                        Visar <span id="pageStart">0</span> till <span id="pageEnd">0</span> av <span id="pageTotal">0</span> poster
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="app.prevPage()" id="btnPrev" class="px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-medium">
+                            <i class="fas fa-chevron-left mr-1"></i> Föregående
+                        </button>
+                        <div id="pageNumbers" class="flex gap-1"></div>
+                        <button onclick="app.nextPage()" id="btnNext" class="px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-medium">
+                            Nästa <i class="fas fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Export Actions -->
-            <div class="mt-6 flex flex-wrap gap-3 justify-end">
-                <button onclick="app.exportToPDF()" class="bg-red-50 hover:bg-red-100 text-red-700 px-6 py-2.5 rounded-lg border border-red-200 transition flex items-center gap-2 font-medium shadow-sm">
-                    <i class="fas fa-file-pdf"></i> Exportera till PDF
+            <div class="mt-8 flex flex-wrap gap-3 justify-end">
+                <button onclick="app.showExportModal('pdf')" class="export-btn bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-6 py-3 rounded-xl transition flex items-center gap-2 font-semibold shadow-lg shadow-red-500/30 transform hover:-translate-y-0.5">
+                    <i class="fas fa-file-pdf text-lg"></i> 
+                    <span>Exportera PDF</span>
+                    <span class="text-xs opacity-75 ml-1">Ctrl+P</span>
                 </button>
-                <button onclick="app.exportToDOC()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-6 py-2.5 rounded-lg border border-blue-200 transition flex items-center gap-2 font-medium shadow-sm">
-                    <i class="fas fa-file-word"></i> Exportera till Word
+                
+                <button onclick="app.showExportModal('docx')" class="export-btn bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-xl transition flex items-center gap-2 font-semibold shadow-lg shadow-blue-500/30 transform hover:-translate-y-0.5">
+                    <i class="fas fa-file-word text-lg"></i> 
+                    <span>Exportera Word</span>
+                    <span class="text-xs opacity-75 ml-1">Ctrl+D</span>
                 </button>
-                <button onclick="app.exportToExcel()" class="bg-green-50 hover:bg-green-100 text-green-700 px-6 py-2.5 rounded-lg border border-green-200 transition flex items-center gap-2 font-medium shadow-sm">
-                    <i class="fas fa-file-excel"></i> Exportera till Excel (CSV)
+                
+                <button onclick="app.showExportModal('excel')" class="export-btn bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 py-3 rounded-xl transition flex items-center gap-2 font-semibold shadow-lg shadow-emerald-500/30 transform hover:-translate-y-0.5">
+                    <i class="fas fa-file-excel text-lg"></i> 
+                    <span>Exportera Excel</span>
+                    <span class="text-xs opacity-75 ml-1">Ctrl+E</span>
                 </button>
-                <button onclick="app.clearAll()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2.5 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
-                    <i class="fas fa-trash-alt"></i> Rensa allt
+                
+                <button onclick="app.clearAll()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-xl transition flex items-center gap-2 font-semibold border-2 border-slate-200 hover:border-slate-300">
+                    <i class="fas fa-trash-alt"></i> 
+                    <span>Rensa allt</span>
+                    <span class="text-xs opacity-75 ml-1">Ctrl+L</span>
                 </button>
+            </div>
+
+            <!-- Keyboard Shortcuts Help -->
+            <div class="mt-8 glass-panel rounded-2xl p-6">
+                <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-keyboard text-slate-400"></i> 
+                    Kortkommandon
+                </h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div class="flex items-center gap-2">
+                        <kbd class="px-2 py-1 bg-slate-100 rounded text-xs font-mono border">Ctrl+O</kbd>
+                        <span class="text-slate-600">Öppna JSON</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <kbd class="px-2 py-1 bg-slate-100 rounded text-xs font-mono border">Ctrl+P</kbd>
+                        <span class="text-slate-600">Export PDF</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <kbd class="px-2 py-1 bg-slate-100 rounded text-xs font-mono border">Ctrl+D</kbd>
+                        <span class="text-slate-600">Export Word</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <kbd class="px-2 py-1 bg-slate-100 rounded text-xs font-mono border">Ctrl+E</kbd>
+                        <span class="text-slate-600">Export Excel</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <kbd class="px-2 py-1 bg-slate-100 rounded text-xs font-mono border">Ctrl+Q</kbd>
+                        <span class="text-slate-600">Logga ut</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <kbd class="px-2 py-1 bg-slate-100 rounded text-xs font-mono border">Ctrl+A</kbd>
+                        <span class="text-slate-600">Välj alla</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <kbd class="px-2 py-1 bg-slate-100 rounded text-xs font-mono border">F5</kbd>
+                        <span class="text-slate-600">Uppdatera</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <kbd class="px-2 py-1 bg-slate-100 rounded text-xs font-mono border">F1</kbd>
+                        <span class="text-slate-600">Hjälp</span>
+                    </div>
+                </div>
             </div>
         </main>
 
-        <footer class="bg-white border-t border-slate-200 py-4 mt-8">
-            <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
-                Tidrapport Generator v5.0 | Team Geomira AB | Firebase Authentication
+        <footer class="glass-dark text-white/60 py-6 mt-12">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <p class="text-sm">Tidrapport Generator Pro v5.0 | Team Geomira AB</p>
+                <p class="text-xs mt-1 opacity-50">Utvecklad med Firebase Authentication & Realtime Database</p>
             </div>
         </footer>
     </div>
 
     <script>
-        // Firebase-konfiguration (ersätt med din egen)
+        // Firebase-konfiguration
         const firebaseConfig = {
             apiKey: "AIzaSyAI-VxrbSC-d1WscOkpY9d8NaEUgdjneeE",
             authDomain: "tidbok-df555.firebaseapp.com",
@@ -477,7 +1542,6 @@
         // Initiera Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        const database = firebase.database(); // För framtida bruk om vi vill använda SDK
 
         const app = {
             data: null,
@@ -485,53 +1549,53 @@
             selectedUsers: new Set(),
             projects: [],
             filteredRecords: [],
+            allRecords: [],
             currentUser: null,
             rowHeight: 25,
             serviceAccount: null,
             accessToken: null,
             tokenExpiry: null,
             docxLoaded: false,
+            currentPage: 1,
+            itemsPerPage: 50,
+            sortColumn: 'date',
+            sortDirection: 'asc',
+            currentExportFormat: 'pdf',
+            savedViews: JSON.parse(localStorage.getItem('tidbookViews') || '[]'),
+            
+            // Nya filter-egenskaper
+            advancedFiltersOpen: false,
 
             init() {
-                this.checkProtocol();
-                this.populateWeekOptions();
                 this.setupEventListeners();
                 this.setDefaultDates();
                 this.checkAuthState();
                 this.checkDocxLibrary();
-                this.loadStoredToken(); // Försök ladda token från localStorage
+                this.loadSavedSettings();
             },
 
-            checkProtocol() {
-                if (window.location.protocol === 'file:') {
-                    document.getElementById('protocolWarning').classList.remove('hidden');
-                }
-            },
-
-            populateWeekOptions() {
-                const select = document.getElementById('weekFilter');
-                // Rensa befintliga alternativ förutom "Alla veckor"
-                select.innerHTML = '<option value="">Alla veckor</option>';
-                for (let i = 1; i <= 53; i++) {
-                    const option = document.createElement('option');
-                    option.value = i;
-                    option.textContent = `Vecka ${i}`;
-                    select.appendChild(option);
+            loadSavedSettings() {
+                // Ladda sparade inställningar
+                const savedHeight = localStorage.getItem('tidbookRowHeight');
+                if (savedHeight) {
+                    this.rowHeight = parseInt(savedHeight);
                 }
             },
 
             checkDocxLibrary() {
+                let checkCount = 0;
                 const checkInterval = setInterval(() => {
                     if (window.docx && window.docx.Document) {
                         this.docxLoaded = true;
                         clearInterval(checkInterval);
+                        console.log('DOCX-biblioteket laddat');
+                    }
+                    checkCount++;
+                    if (checkCount > 50) { // 5 sekunder
+                        clearInterval(checkInterval);
+                        console.warn('DOCX-biblioteket kunde inte laddas');
                     }
                 }, 100);
-                setTimeout(() => {
-                    if (!this.docxLoaded) {
-                        console.warn('DOCX-biblioteket laddades inte');
-                    }
-                }, 5000);
             },
 
             setupEventListeners() {
@@ -545,24 +1609,67 @@
                     this.registerWithEmail();
                 });
 
+                // Kortkommandon
                 document.addEventListener('keydown', (e) => {
                     if (!document.getElementById('loginScreen').classList.contains('hidden')) return;
                     
-                    if (e.ctrlKey && e.key === 'o') { e.preventDefault(); document.getElementById('jsonFileInput').click(); }
-                    if (e.ctrlKey && e.key === 'p') { e.preventDefault(); this.exportToPDF(); }
-                    if (e.ctrlKey && e.key === 'd') { e.preventDefault(); this.exportToDOC(); }
-                    if (e.ctrlKey && e.key === 'e') { e.preventDefault(); this.exportToExcel(); }
-                    if (e.ctrlKey && e.key === 'q') { e.preventDefault(); this.logout(); }
-                    if (e.ctrlKey && e.key === 'a' && !e.shiftKey) { e.preventDefault(); this.selectAllUsers(); }
-                    if (e.ctrlKey && e.shiftKey && e.key === 'A') { e.preventDefault(); this.deselectAllUsers(); }
-                    if (e.ctrlKey && e.key === 'l') { e.preventDefault(); this.clearAll(); }
-                    if (e.ctrlKey && e.key === '+') { e.preventDefault(); this.adjustRowHeight(5); }
-                    if (e.ctrlKey && e.key === '-') { e.preventDefault(); this.adjustRowHeight(-5); }
-                    if (e.key === 'F5') { e.preventDefault(); this.applyFilters(); }
+                    if (e.ctrlKey && e.key === 'o') { 
+                        e.preventDefault(); 
+                        document.getElementById('jsonFileInput').click(); 
+                    }
+                    if (e.ctrlKey && e.key === 'p') { 
+                        e.preventDefault(); 
+                        this.showExportModal('pdf'); 
+                    }
+                    if (e.ctrlKey && e.key === 'd') { 
+                        e.preventDefault(); 
+                        this.showExportModal('docx'); 
+                    }
+                    if (e.ctrlKey && e.key === 'e') { 
+                        e.preventDefault(); 
+                        this.showExportModal('excel'); 
+                    }
+                    if (e.ctrlKey && e.key === 'q') { 
+                        e.preventDefault(); 
+                        this.logout(); 
+                    }
+                    if (e.ctrlKey && e.key === 'a' && !e.shiftKey) { 
+                        e.preventDefault(); 
+                        this.selectAllUsers(); 
+                    }
+                    if (e.ctrlKey && e.shiftKey && e.key === 'A') { 
+                        e.preventDefault(); 
+                        this.deselectAllUsers(); 
+                    }
+                    if (e.ctrlKey && e.key === 'l') { 
+                        e.preventDefault(); 
+                        this.clearAll(); 
+                    }
+                    if (e.ctrlKey && e.key === '+') { 
+                        e.preventDefault(); 
+                        this.adjustRowHeight(5); 
+                    }
+                    if (e.ctrlKey && e.key === '-') { 
+                        e.preventDefault(); 
+                        this.adjustRowHeight(-5); 
+                    }
+                    if (e.key === 'F5') { 
+                        e.preventDefault(); 
+                        this.applyFilters(); 
+                    }
                     if (e.key === 'F1') { 
                         e.preventDefault(); 
-                        alert('Kortkommandon:\nCtrl+O: Öppna JSON\nCtrl+P: PDF\nCtrl+D: Word\nCtrl+E: Excel\nCtrl+Q: Logga ut\nCtrl+A: Alla användare\nCtrl+Shift+A: Inga användare\nCtrl+L: Rensa\nF5: Uppdatera filter');
+                        this.showHelp(); 
                     }
+                    if (e.ctrlKey && e.key === 'f') {
+                        e.preventDefault();
+                        document.getElementById('globalSearch').focus();
+                    }
+                });
+
+                // Exportera kolumn-checkboxar
+                document.querySelectorAll('.export-column').forEach(cb => {
+                    cb.addEventListener('change', () => this.updateExportPreview());
                 });
             },
 
@@ -583,13 +1690,17 @@
                 auth.onAuthStateChanged((user) => {
                     if (user) {
                         this.currentUser = user;
-                        document.getElementById('userDisplay').textContent = user.email;
+                        document.getElementById('userDisplay').textContent = user.displayName || user.email;
                         document.getElementById('loginScreen').classList.add('hidden');
                         document.getElementById('mainApp').classList.remove('hidden');
                         document.getElementById('mainApp').classList.add('flex', 'fade-in');
-                        document.getElementById('firebaseStatus').classList.remove('hidden');
-                        document.getElementById('firebaseStatus').innerHTML = '<i class="fas fa-check-circle"></i> <span>Inloggad</span>';
-                        document.getElementById('firebaseStatus').className = 'status-badge status-success';
+                        
+                        const statusBadge = document.getElementById('firebaseStatus');
+                        statusBadge.classList.remove('hidden', 'status-warning');
+                        statusBadge.classList.add('status-success');
+                        statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> <span>Ansluten</span>';
+                        
+                        this.showNotification('Välkommen tillbaka!', 'success');
                     } else {
                         this.currentUser = null;
                         document.getElementById('loginScreen').classList.remove('hidden');
@@ -603,7 +1714,7 @@
                 const password = document.getElementById('loginPassword').value;
 
                 if (!email || !password) {
-                    this.showLoginError('Ange e-post och lösenord', true);
+                    this.showLoginError('Ange e-post och lösenord');
                     return;
                 }
 
@@ -611,10 +1722,10 @@
 
                 try {
                     await auth.signInWithEmailAndPassword(email, password);
-                } catch (error) {
-                    this.showLoginError(this.getErrorMessage(error), true);
-                } finally {
                     this.hideLoading();
+                } catch (error) {
+                    this.hideLoading();
+                    this.showLoginError(this.getErrorMessage(error));
                 }
             },
 
@@ -625,12 +1736,17 @@
                 const confirmPassword = document.getElementById('regConfirmPassword').value;
 
                 if (password !== confirmPassword) {
-                    alert('Lösenorden matchar inte');
+                    this.showNotification('Lösenorden matchar inte', 'error');
                     return;
                 }
 
                 if (password.length < 6) {
-                    alert('Lösenordet måste vara minst 6 tecken');
+                    this.showNotification('Lösenordet måste vara minst 6 tecken', 'error');
+                    return;
+                }
+
+                if (!document.getElementById('regTerms').checked) {
+                    this.showNotification('Du måste godkänna villkoren', 'error');
                     return;
                 }
 
@@ -641,33 +1757,33 @@
                     await userCredential.user.updateProfile({ displayName: name });
                     this.closeRegister();
                     document.getElementById('registerForm').reset();
-                } catch (error) {
-                    alert(this.getErrorMessage(error));
-                } finally {
+                    this.showNotification('Konto skapat!', 'success');
                     this.hideLoading();
+                } catch (error) {
+                    this.hideLoading();
+                    this.showNotification(this.getErrorMessage(error), 'error');
                 }
             },
 
             getErrorMessage(error) {
-                switch(error.code) {
-                    case 'auth/invalid-email': return 'Ogiltig e-postadress';
-                    case 'auth/user-disabled': return 'Detta konto är inaktiverat';
-                    case 'auth/user-not-found': return 'Ingen användare med denna e-post';
-                    case 'auth/wrong-password': return 'Fel lösenord';
-                    case 'auth/email-already-in-use': return 'E-postadressen används redan';
-                    case 'auth/weak-password': return 'Lösenordet är för svagt (minst 6 tecken)';
-                    case 'auth/network-request-failed': return 'Nätverksfel. Kontrollera din anslutning.';
-                    default: return error.message;
-                }
+                const messages = {
+                    'auth/invalid-email': 'Ogiltig e-postadress',
+                    'auth/user-disabled': 'Detta konto är inaktiverat',
+                    'auth/user-not-found': 'Ingen användare med denna e-post',
+                    'auth/wrong-password': 'Fel lösenord',
+                    'auth/email-already-in-use': 'E-postadressen används redan',
+                    'auth/weak-password': 'Lösenordet är för svagt (minst 6 tecken)',
+                    'auth/network-request-failed': 'Nätverksfel. Kontrollera din anslutning.',
+                    'auth/invalid-credential': 'Ogiltiga inloggningsuppgifter'
+                };
+                return messages[error.code] || error.message;
             },
 
-            showLoginError(message, permanent = false) {
+            showLoginError(message) {
                 const err = document.getElementById('loginError');
-                err.textContent = message;
+                document.getElementById('loginErrorText').textContent = message;
                 err.classList.remove('hidden');
-                if (!permanent) {
-                    setTimeout(() => err.classList.add('hidden'), 5000);
-                }
+                setTimeout(() => err.classList.add('hidden'), 5000);
             },
 
             showRegister() {
@@ -682,50 +1798,57 @@
 
             async logout() {
                 if (!confirm('Är du säker på att du vill logga ut?')) return;
-                try {
-                    await auth.signOut();
-                } catch (error) {
-                    alert('Kunde inte logga ut: ' + error.message);
-                }
-            },
-
-            // Ladda token från localStorage om det finns
-            loadStoredToken() {
-                const saved = localStorage.getItem('firebaseServiceAccount');
-                if (saved) {
-                    try {
-                        const parsed = JSON.parse(saved);
-                        this.serviceAccount = parsed;
-                        this.updateTokenUI(parsed);
-                    } catch (e) {
-                        console.warn('Kunde inte läsa sparad token');
-                    }
-                }
-            },
-
-            updateTokenUI(parsed) {
-                document.getElementById('tokenStatus').classList.remove('hidden');
-                document.getElementById('tokenError').classList.add('hidden');
-                document.getElementById('btnLoadFirebase').disabled = false;
-                document.getElementById('btnLoadFirebase').classList.remove('opacity-50', 'cursor-not-allowed');
-                document.getElementById('tokenStatusText').innerHTML = `Firebase token laddad för ${parsed.client_email}`;
-            },
-
-            // Ladda firebase.vin automatiskt
-            async loadFirebaseVin() {
-                this.showLoading('Laddar firebase.vin...');
                 
                 try {
-                    const response = await fetch('firebase.vin');
-                    if (!response.ok) throw new Error('firebase.vin hittades inte');
-                    
-                    const tokenData = await response.text();
-                    this.processToken(tokenData, true); // Spara till localStorage
-                    
+                    await auth.signOut();
+                    this.showNotification('Du har loggats ut', 'info');
                 } catch (error) {
-                    this.hideLoading();
-                    this.showTokenError(error.message + '. Välj filen manuellt.');
+                    this.showNotification('Kunde inte logga ut: ' + error.message, 'error');
                 }
+            },
+
+            // Förbättrad laddning av firebase.vin
+            async loadFirebaseVin() {
+                this.showLoading('Söker efter firebase.vin...');
+                
+                const possiblePaths = [
+                    'firebase.vin',
+                    './firebase.vin',
+                    '../firebase.vin',
+                    '/firebase.vin',
+                    'assets/firebase.vin',
+                    'config/firebase.vin'
+                ];
+                
+                let loaded = false;
+                
+                for (let i = 0; i < possiblePaths.length; i++) {
+                    try {
+                        this.updateLoadingProgress(((i + 1) / possiblePaths.length) * 100);
+                        const response = await fetch(possiblePaths[i], { 
+                            method: 'GET',
+                            cache: 'no-cache'
+                        });
+                        
+                        if (response.ok) {
+                            const tokenData = await response.text();
+                            this.processToken(tokenData);
+                            loaded = true;
+                            break;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (!loaded) {
+                    this.hideLoading();
+                    this.showTokenError('Kunde inte hitta firebase.vin automatiskt. Filen ska ligga i samma mapp som HTML-filen.');
+                }
+            },
+
+            updateLoadingProgress(percent) {
+                document.getElementById('loadingProgress').style.width = percent + '%';
             },
 
             loadTokenFromFile(event) {
@@ -736,7 +1859,7 @@
                 
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    this.processToken(e.target.result, true);
+                    this.processToken(e.target.result);
                 };
                 reader.onerror = () => {
                     this.hideLoading();
@@ -745,22 +1868,44 @@
                 reader.readAsText(file);
             },
 
-            processToken(tokenData, saveToStorage = false) {
+            showManualTokenInput() {
+                document.getElementById('manualTokenInput').classList.remove('hidden');
+            },
+
+            processManualToken() {
+                const tokenData = document.getElementById('manualTokenTextarea').value;
+                if (!tokenData.trim()) {
+                    this.showNotification('Klistra in token-data först', 'error');
+                    return;
+                }
+                this.processToken(tokenData);
+            },
+
+            processToken(tokenData) {
                 try {
                     const parsed = JSON.parse(tokenData);
                     
                     if (!parsed.client_email || !parsed.private_key) {
-                        throw new Error('Ogiltig service account');
+                        throw new Error('Ogiltig service account - saknar client_email eller private_key');
                     }
                     
                     this.serviceAccount = parsed;
                     
-                    if (saveToStorage) {
-                        localStorage.setItem('firebaseServiceAccount', tokenData);
-                    }
+                    document.getElementById('tokenStatus').classList.remove('hidden');
+                    document.getElementById('tokenError').classList.add('hidden');
+                    document.getElementById('manualTokenInput').classList.add('hidden');
                     
-                    this.updateTokenUI(parsed);
+                    const btn = document.getElementById('btnLoadFirebase');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    document.getElementById('tokenStatusText').innerHTML = `
+                        <span class="font-mono text-xs">${parsed.client_email}</span>
+                        <br><span class="text-xs">Projekt: ${parsed.project_id || 'Okänt'}</span>
+                    `;
+                    
                     this.hideLoading();
+                    this.showNotification('Firebase-token laddad!', 'success');
                     
                 } catch (error) {
                     this.hideLoading();
@@ -768,20 +1913,21 @@
                 }
             },
 
-            forgetToken() {
-                if (confirm('Ta bort sparad token från webbläsaren?')) {
-                    localStorage.removeItem('firebaseServiceAccount');
-                    this.serviceAccount = null;
-                    document.getElementById('tokenStatus').classList.add('hidden');
-                    document.getElementById('btnLoadFirebase').disabled = true;
-                    document.getElementById('btnLoadFirebase').classList.add('opacity-50', 'cursor-not-allowed');
-                }
-            },
-
             showTokenError(message) {
                 document.getElementById('tokenErrorText').textContent = message;
                 document.getElementById('tokenError').classList.remove('hidden');
                 document.getElementById('tokenStatus').classList.add('hidden');
+            },
+
+            showTokenHelp() {
+                alert(`Hjälp för firebase.vin:
+
+1. Gå till Firebase Console → Projektinställningar → Service Accounts
+2. Klicka på "Generate new private key"
+3. Spara filen som firebase.vin i samma mapp som denna HTML-fil
+4. Klicka på "Ladda firebase.vin automatiskt"
+
+Alternativt kan du välja filen manuellt med "Välj fil manuellt".`);
             },
 
             async getAccessToken() {
@@ -846,7 +1992,7 @@
 
             async loadFromFirebase() {
                 if (!this.serviceAccount) {
-                    alert('Ladda firebase.vin först');
+                    this.showNotification('Ladda firebase.vin först', 'error');
                     return;
                 }
 
@@ -857,7 +2003,8 @@
                     
                     this.showLoading('Hämtar data från Firebase...');
                     
-                    const firebaseUrl = `https://${this.serviceAccount.project_id}-default-rtdb.europe-west1.firebasedatabase.app/.json?access_token=${token}`;
+                    const projectId = this.serviceAccount.project_id || 'tidbok-df555';
+                    const firebaseUrl = `https://${projectId}-default-rtdb.europe-west1.firebasedatabase.app/.json?access_token=${token}&shallow=false`;
                     
                     const response = await fetch(firebaseUrl, {
                         method: 'GET',
@@ -866,7 +2013,7 @@
 
                     if (!response.ok) {
                         if (response.status === 401 || response.status === 403) {
-                            throw new Error('Åtkomst nekad. Kontrollera behörigheter.');
+                            throw new Error('Åtkomst nekad. Kontrollera behörigheter i Firebase Console.');
                         }
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -874,7 +2021,7 @@
                     this.data = await response.json();
                     
                     if (!this.data) {
-                        throw new Error('Ingen data returnerades');
+                        throw new Error('Ingen data returnerades från databasen');
                     }
 
                     this.processData();
@@ -882,11 +2029,13 @@
                     document.getElementById('fileStatus').innerHTML = 
                         `<span class="status-badge status-success"><i class="fas fa-check"></i> Data hämtad från Firebase</span>`;
                     
+                    this.updateDataSummary();
                     this.hideLoading();
+                    this.showNotification('Data hämtad framgångsrikt!', 'success');
 
                 } catch (error) {
                     console.error('Firebase error:', error);
-                    alert('Kunde inte hämta data: ' + error.message);
+                    this.showNotification('Kunde inte hämta data: ' + error.message, 'error');
                     
                     document.getElementById('fileStatus').innerHTML = 
                         `<span class="status-badge status-error"><i class="fas fa-exclamation-triangle"></i> Fel vid hämtning</span>`;
@@ -895,13 +2044,66 @@
                 }
             },
 
+            updateDataSummary() {
+                if (!this.data) return;
+                
+                let totalRecords = 0;
+                let totalHours = 0;
+                let projectSet = new Set();
+                
+                Object.values(this.data.users || {}).forEach(user => {
+                    if (user.records) {
+                        totalRecords += Object.keys(user.records).length;
+                        Object.values(user.records).forEach(rec => {
+                            try {
+                                const start = new Date(`2000-01-01T${rec.startTime}`);
+                                let end = new Date(`2000-01-01T${rec.endTime}`);
+                                if (end < start) end.setDate(end.getDate() + 1);
+                                const diff = (end - start) / 1000 / 60;
+                                const breakMin = parseInt(rec.breakTime) || 0;
+                                totalHours += Math.max(0, (diff - breakMin) / 60);
+                            } catch (e) {}
+                        });
+                    }
+                    if (user.projects) {
+                        Object.values(user.projects).forEach(p => projectSet.add(p.code || p.name));
+                    }
+                });
+                
+                document.getElementById('summaryUsers').textContent = Object.keys(this.data.users || {}).length;
+                document.getElementById('summaryProjects').textContent = projectSet.size;
+                document.getElementById('summaryRecords').textContent = totalRecords;
+                document.getElementById('summaryHours').textContent = totalHours.toFixed(1) + 'h';
+                document.getElementById('dataSummary').classList.remove('hidden');
+            },
+
             showLoading(message) {
                 document.getElementById('loadingText').textContent = message || 'Laddar...';
                 document.getElementById('loadingOverlay').classList.add('active');
+                document.getElementById('loadingProgress').style.width = '0%';
             },
 
             hideLoading() {
                 document.getElementById('loadingOverlay').classList.remove('active');
+            },
+
+            showNotification(message, type = 'info') {
+                const container = document.getElementById('notificationContainer');
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                container.appendChild(notification);
+                
+                setTimeout(() => notification.classList.add('show'), 10);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 400);
+                }, 4000);
             },
 
             setDefaultDates() {
@@ -911,6 +2113,25 @@
                 
                 document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
                 document.getElementById('endDate').value = lastDay.toISOString().split('T')[0];
+                
+                // Sätt export-datum också
+                document.getElementById('exportStartDate').value = firstDay.toISOString().split('T')[0];
+                document.getElementById('exportEndDate').value = lastDay.toISOString().split('T')[0];
+            },
+
+            setWeek(offset) {
+                const now = new Date();
+                const startOfWeek = new Date(now);
+                const day = startOfWeek.getDay();
+                const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
+                startOfWeek.setDate(diff);
+                
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                
+                document.getElementById('startDate').value = startOfWeek.toISOString().split('T')[0];
+                document.getElementById('endDate').value = endOfWeek.toISOString().split('T')[0];
+                this.applyFilters();
             },
 
             handleFileSelect(event) {
@@ -926,10 +2147,12 @@
                         this.processData();
                         document.getElementById('fileStatus').innerHTML = 
                             `<span class="status-badge status-success"><i class="fas fa-check"></i> Fil laddad: ${file.name}</span>`;
+                        this.updateDataSummary();
                         this.hideLoading();
+                        this.showNotification('Fil laddad!', 'success');
                     } catch (err) {
                         this.hideLoading();
-                        alert('Kunde inte läsa filen: ' + err.message);
+                        this.showNotification('Kunde inte läsa filen: ' + err.message, 'error');
                     }
                 };
                 reader.readAsText(file);
@@ -949,22 +2172,20 @@
                 Object.entries(this.data.users).forEach(([id, userData]) => {
                     const name = `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || id;
                     this.users.push({ id, name, data: userData });
+                    this.selectedUsers.add(id);
                     
                     const div = document.createElement('div');
-                    div.className = 'px-3 py-2 hover:bg-slate-100 cursor-pointer flex items-center gap-2 transition';
+                    div.className = 'checkbox-wrapper rounded-lg hover:bg-white transition';
                     div.innerHTML = `
-                        <input type="checkbox" class="user-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500" data-id="${id}">
-                        <span class="text-sm text-slate-700">${name}</span>
+                        <input type="checkbox" class="user-checkbox rounded border-slate-300 text-purple-600 focus:ring-purple-500 w-5 h-5" 
+                               data-id="${id}" checked onchange="app.toggleUser('${id}')">
+                        <span class="text-sm text-slate-700 font-medium truncate">${name}</span>
                     `;
-                    div.onclick = (e) => {
-                        if (e.target.type !== 'checkbox') {
-                            const cb = div.querySelector('.user-checkbox');
-                            cb.checked = !cb.checked;
-                        }
-                        this.toggleUser(id);
-                    };
                     userList.appendChild(div);
                 });
+
+                // Uppdatera räknare
+                document.getElementById('userCount').textContent = `${this.selectedUsers.size} valda`;
 
                 const projectSet = new Map();
                 Object.values(this.data.users).forEach(user => {
@@ -990,9 +2211,8 @@
                 });
 
                 document.getElementById('emptyState').classList.add('hidden');
-                
                 this.updateStatistics();
-                this.selectAllUsers(); // Välj alla som standard
+                this.applyFilters();
             },
 
             updateStatistics() {
@@ -1023,39 +2243,14 @@
                 document.getElementById('statProjects').textContent = this.projects.length;
             },
 
-            applyWeekFilter() {
-                const week = document.getElementById('weekFilter').value;
-                if (week) {
-                    // Beräkna datum för ISO-vecka (förenklad, antar att vecka 1 börjar första torsdagen? Här förenklar vi)
-                    const year = new Date().getFullYear();
-                    const firstDayOfYear = new Date(year, 0, 1);
-                    // Justera till första torsdagen för ISO-vecka (men förenklar)
-                    const days = (week - 1) * 7;
-                    const startDate = new Date(firstDayOfYear);
-                    startDate.setDate(firstDayOfYear.getDate() + days);
-                    const endDate = new Date(startDate);
-                    endDate.setDate(startDate.getDate() + 6);
-                    
-                    document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
-                    document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+            toggleAdvancedFilters() {
+                const panel = document.getElementById('advancedFilters');
+                this.advancedFiltersOpen = !this.advancedFiltersOpen;
+                if (this.advancedFiltersOpen) {
+                    panel.classList.add('open');
+                } else {
+                    panel.classList.remove('open');
                 }
-                this.applyFilters();
-            },
-
-            resetAllFilters() {
-                document.getElementById('userFilter').value = '';
-                document.getElementById('projectFilter').value = '';
-                document.getElementById('projectCodeFilter').value = '';
-                document.getElementById('minHoursFilter').value = '';
-                document.getElementById('maxHoursFilter').value = '';
-                document.getElementById('globalSearch').value = '';
-                document.getElementById('dayFilter').value = '';
-                document.getElementById('startTimeFilter').value = '';
-                document.getElementById('endTimeFilter').value = '';
-                document.getElementById('weekFilter').value = '';
-                this.setDefaultDates();
-                this.selectAllUsers();
-                this.applyFilters();
             },
 
             toggleUser(userId) {
@@ -1064,6 +2259,7 @@
                 } else {
                     this.selectedUsers.add(userId);
                 }
+                document.getElementById('userCount').textContent = `${this.selectedUsers.size} valda`;
                 this.applyFilters();
             },
 
@@ -1072,6 +2268,7 @@
                     cb.checked = true;
                     this.selectedUsers.add(cb.dataset.id);
                 });
+                document.getElementById('userCount').textContent = `${this.selectedUsers.size} valda`;
                 this.applyFilters();
             },
 
@@ -1080,6 +2277,21 @@
                     cb.checked = false;
                 });
                 this.selectedUsers.clear();
+                document.getElementById('userCount').textContent = '0 valda';
+                this.applyFilters();
+            },
+
+            invertUserSelection() {
+                document.querySelectorAll('.user-checkbox').forEach(cb => {
+                    const id = cb.dataset.id;
+                    cb.checked = !cb.checked;
+                    if (cb.checked) {
+                        this.selectedUsers.add(id);
+                    } else {
+                        this.selectedUsers.delete(id);
+                    }
+                });
+                document.getElementById('userCount').textContent = `${this.selectedUsers.size} valda`;
                 this.applyFilters();
             },
 
@@ -1091,17 +2303,99 @@
                 });
             },
 
-            adjustRowHeight(delta) {
-                this.rowHeight = Math.max(15, Math.min(50, this.rowHeight + delta));
-                document.getElementById('rowHeightValue').textContent = this.rowHeight;
-                document.querySelectorAll('#dataTable tr').forEach(row => {
-                    row.style.height = this.rowHeight + 'px';
-                });
+            applyWeekFilter() {
+                const week = document.getElementById('weekFilter').value;
+                if (week) {
+                    const year = new Date().getFullYear();
+                    const simple = new Date(year, 0, 1 + (week - 1) * 7);
+                    while (simple.getDay() !== 1) {
+                        simple.setDate(simple.getDate() - 1);
+                    }
+                    const end = new Date(simple);
+                    end.setDate(simple.getDate() + 6);
+                    
+                    document.getElementById('startDate').value = simple.toISOString().split('T')[0];
+                    document.getElementById('endDate').value = end.toISOString().split('T')[0];
+                }
+                this.applyFilters();
+            },
+
+            resetAllFilters() {
+                document.getElementById('userFilter').value = '';
+                document.getElementById('projectFilter').value = '';
+                document.getElementById('projectCodeFilter').value = '';
+                document.getElementById('minHoursFilter').value = '';
+                document.getElementById('maxHoursFilter').value = '';
+                document.getElementById('globalSearch').value = '';
+                document.getElementById('descriptionFilter').value = '';
+                document.getElementById('dayFilter').value = '';
+                document.getElementById('startTimeFrom').value = '';
+                document.getElementById('startTimeTo').value = '';
+                document.getElementById('endTimeFrom').value = '';
+                document.getElementById('endTimeTo').value = '';
+                document.getElementById('weekFilter').value = '';
+                document.getElementById('excludeBreaks').checked = false;
+                document.getElementById('showWeekends').checked = false;
+                document.getElementById('sortBy').value = 'date';
+                document.getElementById('groupBy').value = 'none';
+                document.getElementById('limitResults').value = '';
+                
+                this.sortColumn = 'date';
+                this.sortDirection = 'asc';
+                this.updateSortButtons();
+                
+                this.setDefaultDates();
+                this.selectAllUsers();
+            },
+
+            setSortDirection(dir) {
+                this.sortDirection = dir;
+                this.updateSortButtons();
+                this.applyFilters();
+            },
+
+            updateSortButtons() {
+                const ascBtn = document.getElementById('sortAsc');
+                const descBtn = document.getElementById('sortDesc');
+                
+                if (this.sortDirection === 'asc') {
+                    ascBtn.className = 'flex-1 py-2 text-xs rounded-lg bg-purple-100 text-purple-700 font-medium transition';
+                    descBtn.className = 'flex-1 py-2 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition';
+                } else {
+                    ascBtn.className = 'flex-1 py-2 text-xs rounded-lg bg-slate-100 text-slate-600 font-medium transition';
+                    descBtn.className = 'flex-1 py-2 text-xs rounded-lg bg-purple-100 text-purple-700 font-medium transition';
+                }
+            },
+
+            sortTable(column) {
+                if (this.sortColumn === column) {
+                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortColumn = column;
+                    this.sortDirection = 'asc';
+                }
+                this.applyFilters();
             },
 
             clearSearch() {
                 document.getElementById('globalSearch').value = '';
                 this.applyFilters();
+            },
+
+            adjustRowHeight(delta) {
+                this.rowHeight = Math.max(15, Math.min(50, this.rowHeight + delta));
+                localStorage.setItem('tidbookRowHeight', this.rowHeight);
+                document.getElementById('rowHeightValue').textContent = this.rowHeight + 'px';
+                document.querySelectorAll('#dataTable tr').forEach(row => {
+                    row.style.height = this.rowHeight + 'px';
+                });
+            },
+
+            refreshData() {
+                if (this.data) {
+                    this.applyFilters();
+                    this.showNotification('Data uppdaterad', 'success');
+                }
             },
 
             applyFilters() {
@@ -1117,9 +2411,15 @@
                 const minHours = parseFloat(document.getElementById('minHoursFilter').value) || 0;
                 const maxHours = parseFloat(document.getElementById('maxHoursFilter').value) || 999;
                 const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+                const descriptionFilter = document.getElementById('descriptionFilter').value.toLowerCase();
                 const dayFilter = document.getElementById('dayFilter').value;
-                const startTimeFilter = document.getElementById('startTimeFilter').value;
-                const endTimeFilter = document.getElementById('endTimeFilter').value;
+                const startTimeFrom = document.getElementById('startTimeFrom').value;
+                const startTimeTo = document.getElementById('startTimeTo').value;
+                const endTimeFrom = document.getElementById('endTimeFrom').value;
+                const endTimeTo = document.getElementById('endTimeTo').value;
+                const excludeBreaks = document.getElementById('excludeBreaks').checked;
+                const showWeekends = document.getElementById('showWeekends').checked;
+                const limitResults = parseInt(document.getElementById('limitResults').value) || Infinity;
 
                 let filtered = [];
                 let totalHours = 0;
@@ -1136,21 +2436,35 @@
                     const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
 
                     Object.entries(user.records).forEach(([recId, rec]) => {
+                        // Datumfilter
                         if (startDate && rec.date < startDate) return;
                         if (endDate && rec.date > endDate) return;
 
+                        // Veckodagsfilter
+                        const dateObj = new Date(rec.date);
+                        const dayName = dayMap[dateObj.toLocaleDateString('en-US', {weekday: 'long'})] || '';
+                        
+                        if (!showWeekends && (dayName === 'Lördag' || dayName === 'Söndag')) return;
+                        if (dayFilter && dayName !== dayFilter) return;
+
+                        // Tidsfilter
+                        if (startTimeFrom && rec.startTime < startTimeFrom) return;
+                        if (startTimeTo && rec.startTime > startTimeTo) return;
+                        if (endTimeFrom && rec.endTime < endTimeFrom) return;
+                        if (endTimeTo && rec.endTime > endTimeTo) return;
+
+                        // Projektfilter
                         const project = user.projects?.[rec.projectId] || {};
                         const projDisplay = project.code && project.name ? `${project.name} - ${project.code}` : (project.name || project.code || 'Okänt projekt');
                         
                         if (projectFilter) {
-                            try {
-                                const filterProj = JSON.parse(projectFilter);
-                                if (project.code !== filterProj.code || project.name !== filterProj.name) return;
-                            } catch (e) { return; }
+                            const filterProj = JSON.parse(projectFilter);
+                            if (project.code !== filterProj.code || project.name !== filterProj.name) return;
                         }
                         
                         if (projectCodeFilter && !projDisplay.toLowerCase().includes(projectCodeFilter)) return;
 
+                        // Beräkna timmar
                         let hours = 0;
                         let breakHours = 0;
                         try {
@@ -1160,26 +2474,28 @@
                             const diff = (end - start) / 1000 / 60;
                             const breakMin = parseInt(rec.breakTime) || 0;
                             breakHours = breakMin / 60;
-                            hours = Math.max(0, (diff - breakMin) / 60);
+                            
+                            if (excludeBreaks) {
+                                hours = (end - start) / 1000 / 60 / 60;
+                            } else {
+                                hours = Math.max(0, (diff - breakMin) / 60);
+                            }
                         } catch (e) { hours = 0; }
 
+                        // Timmarfilter
                         if (hours < minHours || hours > maxHours) return;
 
-                        const dateObj = new Date(rec.date);
-                        const dayName = dayMap[dateObj.toLocaleDateString('en-US', {weekday: 'long'})] || '';
-                        
-                        if (dayFilter && dayName !== dayFilter) return;
-                        
-                        if (startTimeFilter && rec.startTime < startTimeFilter) return;
-                        if (endTimeFilter && rec.endTime > endTimeFilter) return;
-
+                        // Sökfilter
                         const shortDate = rec.date.substring(2);
-
                         const searchString = `${shortDate} ${dayName} ${rec.startTime} ${rec.endTime} ${projDisplay} ${rec.notes || ''} ${userName}`.toLowerCase();
                         if (searchTerm && !searchString.includes(searchTerm)) return;
+                        
+                        // Beskrivningsfilter
+                        if (descriptionFilter && !(rec.notes || '').toLowerCase().includes(descriptionFilter)) return;
 
                         filtered.push({
                             date: shortDate,
+                            fullDate: rec.date,
                             day: dayName,
                             start: rec.startTime,
                             end: rec.endTime,
@@ -1187,15 +2503,42 @@
                             hours: hours.toFixed(2),
                             project: projDisplay,
                             description: rec.notes || '',
-                            user: userName
+                            user: userName,
+                            raw: rec
                         });
 
                         totalHours += hours;
                     });
                 });
 
-                filtered.sort((a, b) => a.date.localeCompare(b.date) || a.user.localeCompare(b.user));
-                
+                // Sortering
+                const sortField = document.getElementById('sortBy').value;
+                filtered.sort((a, b) => {
+                    let valA = a[sortField];
+                    let valB = b[sortField];
+                    
+                    if (sortField === 'hours') {
+                        valA = parseFloat(valA);
+                        valB = parseFloat(valB);
+                    }
+                    
+                    if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+                    if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                // Begränsa resultat
+                if (limitResults < filtered.length) {
+                    filtered = filtered.slice(0, limitResults);
+                }
+
+                // Gruppering
+                const groupBy = document.getElementById('groupBy').value;
+                if (groupBy !== 'none') {
+                    // Implementera gruppering om nödvändigt
+                }
+
+                // Lägg till totalrad
                 if (filtered.length > 0) {
                     filtered.push({
                         date: '', day: '', start: '', end: '',
@@ -1205,51 +2548,232 @@
                 }
 
                 this.filteredRecords = filtered;
-                this.renderTable(filtered);
+                this.allRecords = [...filtered];
+                this.currentPage = 1;
+                this.renderTable();
+                this.updateActiveFilters();
             },
 
-            renderTable(records) {
+            updateActiveFilters() {
+                const container = document.getElementById('activeFilters');
+                const list = document.getElementById('activeFiltersList');
+                list.innerHTML = '';
+                
+                const filters = [];
+                
+                if (document.getElementById('startDate').value || document.getElementById('endDate').value) {
+                    filters.push(`Datum: ${document.getElementById('startDate').value || '...'} - ${document.getElementById('endDate').value || '...'}`);
+                }
+                if (document.getElementById('projectFilter').value) {
+                    const proj = JSON.parse(document.getElementById('projectFilter').value);
+                    filters.push(`Projekt: ${proj.display}`);
+                }
+                if (document.getElementById('globalSearch').value) {
+                    filters.push(`Sök: "${document.getElementById('globalSearch').value}"`);
+                }
+                
+                if (filters.length === 0) {
+                    container.classList.add('hidden');
+                    return;
+                }
+                
+                container.classList.remove('hidden');
+                filters.forEach(f => {
+                    const badge = document.createElement('span');
+                    badge.className = 'text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-medium';
+                    badge.textContent = f;
+                    list.appendChild(badge);
+                });
+            },
+
+            renderTable() {
                 const tbody = document.getElementById('dataTable');
                 tbody.innerHTML = '';
                 
-                document.getElementById('rowCount').textContent = `Rader: ${records.filter(r => !r.isTotal).length}`;
+                const dataLength = this.allRecords.filter(r => !r.isTotal).length;
+                document.getElementById('rowCount').textContent = `${dataLength} rader`;
+                
+                // Paginering
+                const totalPages = Math.ceil(dataLength / this.itemsPerPage);
+                const start = (this.currentPage - 1) * this.itemsPerPage;
+                const end = Math.min(start + this.itemsPerPage, dataLength);
+                const pageData = this.allRecords.slice(start, end + (this.allRecords[this.allRecords.length - 1]?.isTotal ? 1 : 0));
+                
+                // Uppdatera pagineringsinfo
+                if (dataLength > this.itemsPerPage) {
+                    document.getElementById('pagination').classList.remove('hidden');
+                    document.getElementById('pageStart').textContent = start + 1;
+                    document.getElementById('pageEnd').textContent = Math.min(end, dataLength);
+                    document.getElementById('pageTotal').textContent = dataLength;
+                    document.getElementById('btnPrev').disabled = this.currentPage === 1;
+                    document.getElementById('btnNext').disabled = this.currentPage >= totalPages;
+                } else {
+                    document.getElementById('pagination').classList.add('hidden');
+                }
 
-                if (records.length === 0) {
+                if (this.allRecords.length === 0) {
                     document.getElementById('emptyState').classList.remove('hidden');
                     return;
                 }
 
                 document.getElementById('emptyState').classList.add('hidden');
 
-                records.forEach((rec, idx) => {
+                pageData.forEach((rec, idx) => {
                     const tr = document.createElement('tr');
                     tr.style.height = this.rowHeight + 'px';
                     
                     if (rec.isTotal) {
-                        tr.className = 'row-total border-t-2 border-slate-300';
+                        tr.className = 'row-total';
                     } else {
-                        tr.className = idx % 2 === 0 ? 'row-even hover:bg-slate-50' : 'row-odd hover:bg-slate-50';
+                        tr.className = idx % 2 === 0 ? 'row-even hover:bg-blue-50/50 transition-colors' : 'row-odd hover:bg-blue-50/50 transition-colors';
                     }
 
                     tr.innerHTML = `
-                        <td class="px-4 py-2 text-center">${rec.isTotal ? '' : idx + 1}</td>
-                        <td class="px-4 py-2">${rec.date}</td>
-                        <td class="px-4 py-2">${rec.day}</td>
-                        <td class="px-4 py-2 text-center">${rec.start}</td>
-                        <td class="px-4 py-2 text-center">${rec.end}</td>
-                        <td class="px-4 py-2 text-center">${rec.break}</td>
-                        <td class="px-4 py-2 text-center font-medium ${rec.isTotal ? 'text-emerald-600' : ''}">${rec.hours}</td>
-                        <td class="px-4 py-2 max-w-xs truncate" title="${rec.project}">${rec.project}</td>
-                        <td class="px-4 py-2 max-w-md truncate" title="${rec.description}">${rec.description}</td>
-                        <td class="px-4 py-2">${rec.user}</td>
+                        <td class="px-4 py-2 text-center font-medium ${rec.isTotal ? '' : 'text-slate-500'}">${rec.isTotal ? '' : start + idx + 1}</td>
+                        <td class="px-4 py-2 font-medium ${rec.isTotal ? '' : 'text-slate-700'}">${rec.date}</td>
+                        <td class="px-4 py-2 text-slate-600">${rec.day}</td>
+                        <td class="px-4 py-2 text-center font-mono text-slate-600">${rec.start}</td>
+                        <td class="px-4 py-2 text-center font-mono text-slate-600">${rec.end}</td>
+                        <td class="px-4 py-2 text-center text-slate-500">${rec.break}</td>
+                        <td class="px-4 py-2 text-center font-bold ${rec.isTotal ? 'text-emerald-600 text-lg' : 'text-slate-700'}">${rec.hours}</td>
+                        <td class="px-4 py-2 max-w-xs truncate text-slate-700" title="${rec.project}">${rec.project}</td>
+                        <td class="px-4 py-2 max-w-md truncate text-slate-600" title="${rec.description}">${rec.description}</td>
+                        <td class="px-4 py-2 text-slate-700 font-medium">${rec.user}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             },
 
-            exportToPDF() {
-                if (this.filteredRecords.length === 0) {
-                    alert('Ingen data att exportera. Applicera filter först.');
+            prevPage() {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                    this.renderTable();
+                }
+            },
+
+            nextPage() {
+                const totalPages = Math.ceil(this.allRecords.filter(r => !r.isTotal).length / this.itemsPerPage);
+                if (this.currentPage < totalPages) {
+                    this.currentPage++;
+                    this.renderTable();
+                }
+            },
+
+            // Export-funktionalitet med filter
+            showExportModal(format) {
+                this.currentExportFormat = format;
+                const formatLabels = {
+                    'pdf': 'PDF-dokument',
+                    'docx': 'Word-dokument',
+                    'excel': 'Excel/CSV'
+                };
+                
+                document.getElementById('exportFormatLabel').textContent = formatLabels[format];
+                document.getElementById('exportModal').classList.remove('hidden');
+                document.getElementById('exportModal').classList.add('flex');
+                
+                // Uppdatera förhandsgranskning
+                this.updateExportPreview();
+                
+                // Sätt dagens datum som default för filnamn
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('exportStartDate').value = document.getElementById('startDate').value;
+                document.getElementById('exportEndDate').value = document.getElementById('endDate').value;
+            },
+
+            closeExportModal() {
+                document.getElementById('exportModal').classList.add('hidden');
+                document.getElementById('exportModal').classList.remove('flex');
+            },
+
+            updateExportPreview() {
+                const selectedColumns = document.querySelectorAll('.export-column:checked').length;
+                const dataCount = this.filteredRecords.filter(r => !r.isTotal).length;
+                const totalHours = this.filteredRecords
+                    .filter(r => !r.isTotal)
+                    .reduce((sum, r) => sum + parseFloat(r.hours), 0);
+                
+                document.getElementById('exportPreviewCount').textContent = dataCount;
+                document.getElementById('exportPreviewHours').textContent = totalHours.toFixed(2);
+                document.getElementById('exportPreviewColumns').textContent = selectedColumns;
+            },
+
+            executeExport() {
+                const format = this.currentExportFormat;
+                
+                // Hämta export-filter
+                const exportStart = document.getElementById('exportStartDate').value;
+                const exportEnd = document.getElementById('exportEndDate').value;
+                const includeTotal = document.getElementById('exportIncludeTotal').checked;
+                const includeHeader = document.getElementById('exportIncludeHeader').checked;
+                
+                // Filtrera data för export
+                let exportData = this.filteredRecords.filter(r => !r.isTotal);
+                
+                if (exportStart || exportEnd) {
+                    exportData = exportData.filter(r => {
+                        if (exportStart && r.fullDate < exportStart) return false;
+                        if (exportEnd && r.fullDate > exportEnd) return false;
+                        return true;
+                    });
+                }
+                
+                // Hämta valda kolumner
+                const selectedColumns = Array.from(document.querySelectorAll('.export-column:checked')).map(cb => cb.value);
+                
+                if (selectedColumns.length === 0) {
+                    this.showNotification('Välj minst en kolumn att exportera', 'error');
+                    return;
+                }
+                
+                // Mappa data till valda kolumner
+                const columnMap = {
+                    'index': (r, i) => i + 1,
+                    'date': r => r.date,
+                    'day': r => r.day,
+                    'start': r => r.start,
+                    'end': r => r.end,
+                    'break': r => r.break,
+                    'hours': r => r.hours,
+                    'project': r => r.project,
+                    'description': r => r.description,
+                    'user': r => r.user
+                };
+                
+                const mappedData = exportData.map((rec, idx) => 
+                    selectedColumns.map(col => columnMap[col](rec, idx))
+                );
+                
+                // Lägg till totalrad om vald
+                if (includeTotal && exportData.length > 0) {
+                    const totalHours = exportData.reduce((sum, r) => sum + parseFloat(r.hours), 0);
+                    const totalRow = selectedColumns.map(col => {
+                        if (col === 'break') return 'Totalt:';
+                        if (col === 'hours') return totalHours.toFixed(2);
+                        return '';
+                    });
+                    mappedData.push(totalRow);
+                }
+                
+                // Utför export
+                switch(format) {
+                    case 'pdf':
+                        this.exportToPDF(mappedData, selectedColumns, includeHeader);
+                        break;
+                    case 'docx':
+                        this.exportToDOC(mappedData, selectedColumns, includeHeader);
+                        break;
+                    case 'excel':
+                        this.exportToExcel(mappedData, selectedColumns, includeHeader);
+                        break;
+                }
+                
+                this.closeExportModal();
+            },
+
+            exportToPDF(data, columns, includeHeader) {
+                if (data.length === 0) {
+                    this.showNotification('Ingen data att exportera', 'error');
                     return;
                 }
 
@@ -1257,85 +2781,90 @@
                     const { jsPDF } = window.jspdf;
                     const doc = new jsPDF('l', 'mm', 'a4');
                     
+                    const colorScheme = document.getElementById('exportColorScheme').value;
+                    const fontSize = document.getElementById('exportFontSize').value;
+                    
+                    const fontSizes = { small: 8, medium: 10, large: 12 };
+                    const baseFontSize = fontSizes[fontSize] || 10;
+                    
+                    // Header
                     doc.setFontSize(16);
                     doc.text('Team Geomira AB', 14, 20);
                     doc.setFontSize(14);
-                    doc.text('Tidrapport', 14, 35);
+                    doc.text('Tidrapport', 14, 30);
                     
                     const users = Array.from(this.selectedUsers).map(id => {
                         const u = this.data.users[id];
-                        return `${u.firstName || ''} ${u.lastName || ''}`.trim();
+                        return `${u.firstName} ${u.lastName}`;
                     }).join(', ');
 
                     doc.setFontSize(10);
-                    doc.text(`Mätningsingenjör: ${users}`, 14, 45);
+                    doc.text(`Mätningsingenjör: ${users}`, 14, 40);
                     
                     const period = `${document.getElementById('startDate').value} - ${document.getElementById('endDate').value}`;
-                    doc.text(`Period: ${period}`, 14, 52);
+                    doc.text(`Period: ${period}`, 14, 46);
                     
-                    let filterText = '';
-                    const projectFilter = document.getElementById('projectFilter').value;
-                    if (projectFilter) {
-                        try {
-                            const proj = JSON.parse(projectFilter);
-                            filterText += `Projekt: ${proj.display} `;
-                        } catch (e) {}
-                    }
-                    const searchTerm = document.getElementById('globalSearch').value;
-                    if (searchTerm) {
-                        filterText += `Sök: "${searchTerm}" `;
-                    }
-                    if (filterText) {
-                        doc.text(`Filter: ${filterText}`, 14, 59);
-                        var startY = 66;
-                    } else {
-                        var startY = 59;
-                    }
+                    // Tabell
+                    const headers = [columns.map(c => {
+                        const names = {
+                            'index': '#', 'date': 'Datum', 'day': 'Dag', 'start': 'Start',
+                            'end': 'Slut', 'break': 'Rast', 'hours': 'Tim', 'project': 'Projekt',
+                            'description': 'Beskrivning', 'user': 'Användare'
+                        };
+                        return names[c] || c;
+                    })];
 
-                    const headers = [['#', 'Datum', 'Dag', 'Start', 'Slut', 'Rast', 'Tim', 'Projekt', 'Beskrivning']];
-                    const data = this.filteredRecords.map((rec, idx) => [
-                        rec.isTotal ? '' : idx + 1,
-                        rec.date,
-                        rec.day,
-                        rec.start,
-                        rec.end,
-                        rec.break,
-                        rec.hours,
-                        rec.project,
-                        rec.description
-                    ]);
+                    let startY = 55;
+                    
+                    // Färgschema
+                    let headColor = [100, 116, 139];
+                    if (colorScheme === 'dark') headColor = [30, 41, 59];
+                    if (colorScheme === 'green') headColor = [16, 185, 129];
+                    if (colorScheme === 'red') headColor = [239, 68, 68];
 
                     doc.autoTable({
-                        head: headers,
+                        head: includeHeader ? headers : [],
                         body: data,
                         startY: startY,
-                        styles: { fontSize: 8, cellPadding: 2 },
-                        headStyles: { fillColor: [100, 116, 139], textColor: 255 },
-                        alternateRowStyles: { fillColor: [248, 250, 252] },
+                        styles: { 
+                            fontSize: baseFontSize, 
+                            cellPadding: 2,
+                            font: 'helvetica'
+                        },
+                        headStyles: { 
+                            fillColor: headColor, 
+                            textColor: 255,
+                            fontStyle: 'bold'
+                        },
+                        alternateRowStyles: { 
+                            fillColor: colorScheme === 'dark' ? [248, 250, 252] : [248, 250, 252]
+                        },
                         didParseCell: function(data) {
-                            if (data.row.raw[6] === 'Totalt:') {
+                            if (data.row.raw[0] === 'Totalt:') {
                                 data.cell.styles.fillColor = [226, 232, 240];
                                 data.cell.styles.fontStyle = 'bold';
                             }
                         }
                     });
 
-                    doc.save(`Tidrapport_${period.replace(/\//g, '-')}.pdf`);
+                    const filename = `Tidrapport_${period.replace(/\//g, '-')}_${new Date().toISOString().split('T')[0]}.pdf`;
+                    doc.save(filename);
+                    this.showNotification('PDF exporterad!', 'success');
                     
                 } catch (error) {
                     console.error('PDF error:', error);
-                    alert('Kunde inte skapa PDF: ' + error.message);
+                    this.showNotification('Kunde inte skapa PDF: ' + error.message, 'error');
                 }
             },
 
-            exportToDOC() {
-                if (this.filteredRecords.length === 0) {
-                    alert('Ingen data att exportera. Applicera filter först.');
+            exportToDOC(data, columns, includeHeader) {
+                if (data.length === 0) {
+                    this.showNotification('Ingen data att exportera', 'error');
                     return;
                 }
 
                 if (!this.docxLoaded) {
-                    alert('DOCX-biblioteket laddas. Försök igen om några sekunder.');
+                    this.showNotification('DOCX-biblioteket laddas, vänta...', 'error');
                     return;
                 }
 
@@ -1344,40 +2873,44 @@
 
                     const users = Array.from(this.selectedUsers).map(id => {
                         const u = this.data.users[id];
-                        return `${u.firstName || ''} ${u.lastName || ''}`.trim();
+                        return `${u.firstName} ${u.lastName}`;
                     }).join(', ');
 
                     const period = `${document.getElementById('startDate').value} - ${document.getElementById('endDate').value}`;
+                    
+                    const columnNames = {
+                        'index': '#', 'date': 'Datum', 'day': 'Dag', 'start': 'Start',
+                        'end': 'Slut', 'break': 'Rast', 'hours': 'Tim', 'project': 'Projekt',
+                        'description': 'Beskrivning', 'user': 'Användare'
+                    };
 
-                    const tableRows = [
-                        new TableRow({
-                            children: [
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '#', bold: true })] })] }),
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Datum', bold: true })] })] }),
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Dag', bold: true })] })] }),
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Start', bold: true })] })] }),
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Slut', bold: true })] })] }),
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Rast', bold: true })] })] }),
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Tim', bold: true })] })] }),
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Projekt', bold: true })] })] }),
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Beskrivning', bold: true })] })] }),
-                            ]
-                        })
-                    ];
-
-                    this.filteredRecords.forEach((rec, idx) => {
+                    // Bygg tabellrader
+                    const tableRows = [];
+                    
+                    if (includeHeader) {
                         tableRows.push(new TableRow({
-                            children: [
-                                new TableCell({ children: [new Paragraph(rec.isTotal ? '' : String(idx + 1))] }),
-                                new TableCell({ children: [new Paragraph(rec.date)] }),
-                                new TableCell({ children: [new Paragraph(rec.day)] }),
-                                new TableCell({ children: [new Paragraph(rec.start)] }),
-                                new TableCell({ children: [new Paragraph(rec.end)] }),
-                                new TableCell({ children: [new Paragraph(rec.break)] }),
-                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: rec.hours, bold: rec.isTotal })] })] }),
-                                new TableCell({ children: [new Paragraph(rec.project)] }),
-                                new TableCell({ children: [new Paragraph(rec.description)] }),
-                            ]
+                            children: columns.map(col => new TableCell({
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ text: columnNames[col] || col, bold: true, size: 22 })] 
+                                })],
+                                shading: { fill: 'E2E8F0' }
+                            }))
+                        }));
+                    }
+
+                    data.forEach((row, idx) => {
+                        const isTotal = row[0] === 'Totalt:';
+                        tableRows.push(new TableRow({
+                            children: row.map((cell, cellIdx) => new TableCell({
+                                children: [new Paragraph({ 
+                                    children: [new TextRun({ 
+                                        text: String(cell), 
+                                        bold: isTotal,
+                                        size: 20
+                                    })] 
+                                })],
+                                shading: isTotal ? { fill: 'F1F5F9' } : undefined
+                            }))
                         }));
                     });
 
@@ -1385,9 +2918,13 @@
                         sections: [{
                             properties: {},
                             children: [
-                                new Paragraph({ children: [new TextRun({ text: 'Team Geomira AB', bold: true, size: 28 })] }),
+                                new Paragraph({ 
+                                    children: [new TextRun({ text: 'Team Geomira AB', bold: true, size: 32 })] 
+                                }),
                                 new Paragraph(''),
-                                new Paragraph({ children: [new TextRun({ text: 'Tidrapport', bold: true, size: 24 })] }),
+                                new Paragraph({ 
+                                    children: [new TextRun({ text: 'Tidrapport', bold: true, size: 28 })] 
+                                }),
                                 new Paragraph(`Mätningsingenjör: ${users}`),
                                 new Paragraph(`Period: ${period}`),
                                 new Paragraph(''),
@@ -1408,62 +2945,160 @@
                     });
 
                     Packer.toBlob(doc).then(blob => {
-                        saveAs(blob, `Tidrapport_${period.replace(/\//g, '-')}.docx`);
+                        const filename = `Tidrapport_${period.replace(/\//g, '-')}_${new Date().toISOString().split('T')[0]}.docx`;
+                        saveAs(blob, filename);
+                        this.showNotification('Word-dokument exporterat!', 'success');
                     });
                     
                 } catch (error) {
                     console.error('DOCX error:', error);
-                    alert('Fel vid export till Word: ' + error.message);
+                    this.showNotification('Fel vid export till Word: ' + error.message, 'error');
                 }
             },
 
-            exportToExcel() {
-                if (this.filteredRecords.length === 0) {
-                    alert('Ingen data att exportera. Applicera filter först.');
+            exportToExcel(data, columns, includeHeader) {
+                if (data.length === 0) {
+                    this.showNotification('Ingen data att exportera', 'error');
                     return;
                 }
 
                 try {
-                    // Skapa CSV-innehåll med korrekt formatering
-                    let csv = '"#","Datum","Dag","Start","Slut","Rast","Tim","Projekt","Beskrivning","Användare"\n';
+                    const columnNames = {
+                        'index': '#', 'date': 'Datum', 'day': 'Dag', 'start': 'Start',
+                        'end': 'Slut', 'break': 'Rast', 'hours': 'Tim', 'project': 'Projekt',
+                        'description': 'Beskrivning', 'user': 'Användare'
+                    };
+
+                    let csv = '';
                     
-                    this.filteredRecords.forEach((rec, idx) => {
-                        if (!rec.isTotal) {
-                            csv += `"${idx + 1}","${rec.date}","${rec.day}","${rec.start}","${rec.end}","${rec.break}","${rec.hours}","${rec.project.replace(/"/g, '""')}","${rec.description.replace(/"/g, '""')}","${rec.user}"\n`;
-                        } else {
-                            csv += `"","","","","","${rec.break}","${rec.hours}","","",""\n`;
-                        }
+                    // Header
+                    if (includeHeader) {
+                        csv += columns.map(c => columnNames[c] || c).join(';') + '\n';
+                    }
+                    
+                    // Data
+                    data.forEach(row => {
+                        csv += row.map(cell => {
+                            const str = String(cell);
+                            if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+                                return `"${str.replace(/"/g, '""')}"`;
+                            }
+                            return str;
+                        }).join(';') + '\n';
                     });
                     
                     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-                    saveAs(blob, `Tidrapport_${new Date().toISOString().split('T')[0]}.csv`);
+                    const period = `${document.getElementById('startDate').value}_${document.getElementById('endDate').value}`;
+                    const filename = `Tidrapport_${period}_${new Date().toISOString().split('T')[0]}.csv`;
+                    saveAs(blob, filename);
+                    this.showNotification('Excel-fil exporterad!', 'success');
                     
                 } catch (error) {
                     console.error('Excel error:', error);
-                    alert('Fel vid export till Excel: ' + error.message);
+                    this.showNotification('Fel vid export till Excel: ' + error.message, 'error');
                 }
             },
 
+            saveCurrentView() {
+                const viewName = prompt('Namnge denna vy:');
+                if (!viewName) return;
+                
+                const view = {
+                    name: viewName,
+                    filters: {
+                        startDate: document.getElementById('startDate').value,
+                        endDate: document.getElementById('endDate').value,
+                        projectFilter: document.getElementById('projectFilter').value,
+                        selectedUsers: Array.from(this.selectedUsers)
+                    },
+                    date: new Date().toISOString()
+                };
+                
+                this.savedViews.push(view);
+                localStorage.setItem('tidbookViews', JSON.stringify(this.savedViews));
+                this.showNotification('Vy sparad!', 'success');
+            },
+
+            loadSavedView() {
+                if (this.savedViews.length === 0) {
+                    this.showNotification('Inga sparade vyer', 'error');
+                    return;
+                }
+                
+                const viewNames = this.savedViews.map((v, i) => `${i + 1}. ${v.name}`).join('\n');
+                const choice = prompt(`Välj vy (nummer):\n\n${viewNames}`);
+                
+                if (!choice) return;
+                
+                const idx = parseInt(choice) - 1;
+                if (idx < 0 || idx >= this.savedViews.length) {
+                    this.showNotification('Ogiltigt val', 'error');
+                    return;
+                }
+                
+                const view = this.savedViews[idx];
+                document.getElementById('startDate').value = view.filters.startDate;
+                document.getElementById('endDate').value = view.filters.endDate;
+                document.getElementById('projectFilter').value = view.filters.projectFilter;
+                
+                // Återställ användare
+                this.deselectAllUsers();
+                view.filters.selectedUsers.forEach(id => {
+                    this.selectedUsers.add(id);
+                    const cb = document.querySelector(`.user-checkbox[data-id="${id}"]`);
+                    if (cb) cb.checked = true;
+                });
+                
+                this.applyFilters();
+                this.showNotification('Vy laddad!', 'success');
+            },
+
+            toggleColumnVisibility() {
+                // Implementera kolumnvisibilitet om nödvändigt
+                this.showNotification('Kolumnväljare - implementeras vid behov', 'info');
+            },
+
+            showHelp() {
+                alert(`Kortkommandon:
+                
+Ctrl+O: Öppna JSON-fil
+Ctrl+P: Exportera till PDF
+Ctrl+D: Exportera till Word
+Ctrl+E: Exportera till Excel
+Ctrl+Q: Logga ut
+Ctrl+A: Välj alla användare
+Ctrl+Shift+A: Avmarkera alla användare
+Ctrl+L: Rensa allt
+Ctrl+F: Sök
+F5: Uppdatera filter
+F1: Visa denna hjälp
+
+Tips: Använd exportdialogen för att välja specifika kolumner och datumintervall.`);
+            },
+
             clearAll() {
-                if (!confirm('Är du säker på att du vill rensa allt?')) return;
+                if (!confirm('Är du säker på att du vill rensa all data?')) return;
                 
                 this.data = null;
                 this.selectedUsers.clear();
                 this.filteredRecords = [];
+                this.allRecords = [];
                 this.projects = [];
-                // this.serviceAccount behålls om användaren inte vill logga ut
+                this.serviceAccount = null;
                 
                 document.getElementById('userList').innerHTML = '';
                 document.getElementById('projectFilter').innerHTML = '<option value="">Alla projekt</option>';
                 document.getElementById('globalSearch').value = '';
                 document.getElementById('fileStatus').innerHTML = '<i class="fas fa-circle text-slate-300 text-xs"></i> <span>Ingen data laddad</span>';
+                document.getElementById('tokenStatus').classList.add('hidden');
+                document.getElementById('tokenError').classList.add('hidden');
+                document.getElementById('dataSummary').classList.add('hidden');
                 
-                // Återställ token-status, men behåll token om den finns
-                if (!this.serviceAccount) {
-                    document.getElementById('tokenStatus').classList.add('hidden');
-                }
+                const btn = document.getElementById('btnLoadFirebase');
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
                 
-                this.renderTable([]);
+                this.renderTable();
                 this.setDefaultDates();
                 this.resetAllFilters();
                 
@@ -1471,6 +3106,8 @@
                 document.getElementById('statTotalHours').textContent = '0';
                 document.getElementById('statSelectedUsers').textContent = '0';
                 document.getElementById('statProjects').textContent = '0';
+                
+                this.showNotification('All data rensad', 'info');
             }
         };
 
